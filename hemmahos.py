@@ -4,6 +4,7 @@ import random
 import math
 import json
 import numpy as np
+import time
 
 
 def print_array(array):
@@ -65,6 +66,8 @@ def evaluate(schedule):
     return points
 
 
+start_time = time.time()
+
 participants_dict = {
     "Martin": "Kantorn",
     "Majd": "Flogsta",
@@ -98,7 +101,7 @@ iteration_found = 1
 it = 0
 best_score = 0
 # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
-while score < 46:
+while it < 200000:
     old_schedule = schedule_array
     schedule_array = make_schedule()
     score = evaluate(schedule_array)
@@ -112,3 +115,4 @@ while score < 46:
 print_array(best_schedule)
 print("Poäng: ", best_score)
 print("Hittades i iteration: ", iteration_found)
+print(f"Det tog {time.time() - start_time} sekunder")
