@@ -1,4 +1,14 @@
 # Cykelfest python - edition.
+'''
+Lägg till beskrivning av programmet här
+Typ att första kolonnen är namn på deltagande och resten
+av kolonnerna är deras stopp. Fixa sedan så att programmet
+blir mer användbart, kanske läsa in adressers koordinater och 
+beräkna avstånd med ngn Google api och vikta poängavdrag på det viset.
+
+Fixa multiprocessing också, viktigt!
+
+'''
 
 import random
 import math
