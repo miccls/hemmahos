@@ -15,6 +15,7 @@ Google har förhoppningsvis någon API heh.
 
 To do:
  Ändra programmet så att det inte är hårdkodat för 3 stopp.
+ Det är inlagt så att det ska fungera att bara välja 3 men just nu så går det inte hehe, programmet ger fel.
  Lägg allt i en klass. Ta json eller csv med deltagare som inparameter tillsammans
  med antalet stopp som ska finnas på rundan.
  Dela upp funktionen make_schedule till flera funktioner, exempelvis
@@ -26,7 +27,12 @@ Denna datorn som jag skriver detta på, Dell XPS 15, har 6 kärnor vilket är r�
 Kan man komma in på universitetets linuxmaskiner kan man köra över natten, tiotals
 om inte hundratals miljoner scheman gissningsvis. 
 
-Vill man köra ännu snabbare kan man skriva om tidskritiska delar i C++. Kolla tbks på OU4 för mer om detta.
+Lite cursed nu att köra multicore men lagra en variabel self.array som programmet ska mecka med 
+
+
+Fram över -> för att verkligen krydda effektiviteten,
+gör lista med alla index när man ska slumpa ut folk, shuffla och poppa värden. Det är mad value jämfört med nu.
+Har lagt in det nu lite lowkey så, men kan säkert bli bättre! Rad 126, den logiska satsen kan nog optimeras lite.
 
 '''
 
@@ -35,6 +41,7 @@ import math
 import json
 import numpy as np
 import time
+import csv
 # För multiprocessing
 import concurrent.futures as future
 import os
@@ -45,12 +52,16 @@ class FHR:
     '''
     def __init__(self, participants_dict, stops):
 
-
-        self.participants_dict = participants_dict
+        if type(participants_dict) is str:
+            # We have been given file_path, read from form
+            self.addresses, self.participants_dict = self.read_form(participants_dict)
+        else:
+            self.participants_dict = participants_dict
+        print(self.participants_dict)
         self.stops = stops; 
         #Tar fram den nödvändiga gruppstorleken.
-        self.group_size = len(participants_dict) // stops
-        self.participants_list = list(participants_dict.keys())
+        self.group_size = len(self.participants_dict) // stops
+        self.participants_list = list(self.participants_dict.keys())
         # Börja med tomt schema
         self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
         # schedule_array = make_schedule(schedule_array)
@@ -74,6 +85,25 @@ class FHR:
             string += str(list) + '\n'
         return string
 
+    def read_form(self, file_path):
+        '''Läser in deltagare från svarsfil från google forms.
+        '''
+        participants_dict = {}
+        addresses = {}
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            # Första raden är titlar på frågorna.
+            for row in reader:
+                # Första kolonnen är tidsstämpel, man ska ha plats, adress och namn.
+                if not row[-1].isdigit():
+                    continue
+                assert len(row[1:]) == 3
+                participants_dict[row[1] + ", " + row[-1]] = row[-1]
+                addresses[row[1]] = row[2] 
+
+        return addresses, participants_dict 
+            
+
     def assign_host(self, host, i):
         '''Placerar ut en host under ett stopp på
         dennes egna adress så att hen är garanterat
@@ -90,9 +120,11 @@ class FHR:
         host (host) vid angivet stopp (i) i angivet schema (array)
         '''
         for k in range(self.group_size-2):
-            random_place = random.randint(0, len(self.participants_list)-1)
-            while self.array[random_place][i] != "":
-                random_place = random.randint(0, len(self.participants_list)-1)
+            random_places = list(range(0, len(self.participants_list)))
+            random.shuffle(random_places)
+            random_place = random_places.pop()
+            while self.array[random_place][i] != "" and not all(place[i] != "" for place in self.array):
+                random_place = random_places.pop()
             self.array[random_place][i] = host
         return self.array
 
@@ -100,11 +132,11 @@ class FHR:
         '''Gör ett tomt schema med bara namnkolonnen ifylld.
         '''
         array = []
-        for i in range(len(participants_dict)):
+        for i in range(len(self.participants_dict)):
             array.append([])
             for j in range(self.stops + 1): 
                 if j == 0: 
-                    array[i].append(list(participants_dict.keys())[i])
+                    array[i].append(list(self.participants_dict.keys())[i])
                 else:
                     array[i].append("")
         return array
@@ -116,15 +148,15 @@ class FHR:
 
         # Blanda listan 
         random.shuffle(self.participants_list)
-
+       
         for i in range(1, self.stops + 1):
-            for j in range(0,1 + len(self.participants_list)//self.group_size):
+            for j in range(0, 1 + len(self.participants_list)//self.group_size):
                 # Placerar ut de som ska hosta hos dem själva först.
                 host = self.participants_list[j + (i * (1 + len(self.participants_list)//self.group_size))]
                 self.array = self.assign_host(host, i)
                 # Placera sedan ut resten.
                 
-            for j in range(0,1 + len(self.participants_list)//self.group_size):
+            for j in range(0, 1 + len(self.participants_list)//self.group_size):
                 host = self.participants_list[j + (i * (1 + len(self.participants_list)//self.group_size))]
                 self.array = self.assign_to_host(host, i)
         return self.array
@@ -138,12 +170,12 @@ class FHR:
         '''
         points = 100
         # Poängavdrag ifall man lämnar sitt område.
-        for i in range(len(participants_dict)):
-            previous_stop = participants_dict[schedule[i][0]]
+        for i in range(len(self.participants_dict)):
+            previous_stop = self.participants_dict[schedule[i][0]]
             for j in range(1, self.stops + 1):
-                if previous_stop != participants_dict[schedule[i][j]]:
+                if previous_stop != self.participants_dict[schedule[i][j]]:
                     points -= 1
-                previous_stop = participants_dict[schedule[i][j]]
+                previous_stop = self.participants_dict[schedule[i][j]]
         # Poängavdrag ifall man träffar samma par flera gånger.
         # Vi tar en rad och kollar dubletter i alla rader under den.
         # På så vis råkar vi aldrig ta samma par flera gånger.
@@ -222,7 +254,7 @@ class FHR:
 if __name__ == '__main__':
 
     start_time = time.time()
-
+    '''
     participants_dict = {
         "Martin": "Kantorn",
         "Majd": "Flogsta",
@@ -241,10 +273,11 @@ if __name__ == '__main__':
         "Alice" : "Rackis",
         "Johan" : "Kantorn"
     }
-
+    '''
     # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
     # Fungerar just nu bara för 3.
+    participants_dict = "C:/Users/marti/Downloads/Femma fucking rundan.csv/Femma fucking rundan.csv"
     femma = FHR(participants_dict, stops = 3)
-    best_result = femma.sample(1000)
+    best_result = femma.sample(10000)
     print(femma)
     print(f"Det tog {time.time() - start_time} sekunder")
