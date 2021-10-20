@@ -26,6 +26,7 @@ Denna datorn som jag skriver detta på, Dell XPS 15, har 6 kärnor vilket är r�
 Kan man komma in på universitetets linuxmaskiner kan man köra över natten, tiotals
 om inte hundratals miljoner scheman gissningsvis. 
 
+Vill man köra ännu snabbare kan man skriva om tidskritiska delar i C++. Kolla tbks på OU4 för mer om detta.
 
 '''
 
@@ -34,6 +35,9 @@ import math
 import json
 import numpy as np
 import time
+# För multiprocessing
+import concurrent.futures as future
+import os
 
 class FHR:
     '''
@@ -47,18 +51,31 @@ class FHR:
         #Tar fram den nödvändiga gruppstorleken.
         self.group_size = len(participants_dict) // stops
         self.participants_list = list(participants_dict.keys())
-
+        # Börja med tomt schema
+        self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
         # schedule_array = make_schedule(schedule_array)
         # print_array(schedule_array)
         # print(evaluate(schedule_array))
 
-    def print_array(self,array):
+    def __str__(self):
+        '''Gör så att man kan kalla print med en instans
+        av denna klass som parameter.
+        '''
+        string = self.array_to_str(self.best_schedule['schedule'])
+        string += "\nPoäng: " + str(best_result['score'])
+        string += "\nHittades i iteration: " + str(best_result['iteration'])
+        return string
+
+    def array_to_str(self,array):
+        '''Skapar en sträng representation av ett schema
+        '''
+        string = ''
         for list in array:
-            print(list)
+            string += str(list) + '\n'
+        return string
 
     def assign_host(self, host, i):
-        '''
-        Placerar ut en host under ett stopp på
+        '''Placerar ut en host under ett stopp på
         dennes egna adress så att hen är garanterat
         hemma då folk har dennes hem som stopp.
         array är schemat, i är kolonnen eller stoppet i schemat
@@ -69,8 +86,7 @@ class FHR:
         return self.array
 
     def assign_to_host(self, host, i):
-        '''
-        Placerar ut slumpmässiga deltagare (participants_list) till angiven
+        '''Placerar ut slumpmässiga deltagare (participants_list) till angiven
         host (host) vid angivet stopp (i) i angivet schema (array)
         '''
         for k in range(self.group_size-2):
@@ -81,8 +97,7 @@ class FHR:
         return self.array
 
     def make_empty_schedule(self,):
-        '''
-        Gör ett tomt schema med bara namnkolonnen ifylld.
+        '''Gör ett tomt schema med bara namnkolonnen ifylld.
         '''
         array = []
         for i in range(len(participants_dict)):
@@ -94,7 +109,9 @@ class FHR:
                     array[i].append("")
         return array
 
-    def make_schedule(self,):
+    def make_schedule(self):
+        '''Slumpar fram ett schema
+        '''
         self.array = self.make_empty_schedule()
 
         # Blanda listan 
@@ -113,7 +130,12 @@ class FHR:
         return self.array
                     
 
-    def evaluate(self,schedule):
+    def evaluate(self, schedule):
+        '''Denna metod evaluerar hur bra ett schema faktiskt är.
+        Det är i denna metod man styr vad som är viktigt för ett bra schema.
+        Ändrar man hur mycket poängavdrag en viss egenskap ger kommer 
+        karaktären hos scheman ändras.
+        '''
         points = 100
         # Poängavdrag ifall man lämnar sitt område.
         for i in range(len(participants_dict)):
@@ -135,9 +157,23 @@ class FHR:
                     points += len(unique_set) - ((2 * self.stops) -1)
         return points
 
+    def get_best_schedule(self):
+        '''Metod som returnerar det bästa funna schemat
+        '''
+        # Detta är ifall sample inte redan körts.
+        if not self.best_schedule['schedule']:
+            print("Inget schema genererat!")
+            num_of_its = input("Vill du generera? Ange antar iterationer om ja annars 0.")
+            return self.sample(num_of_its)
+        else:
+            return self.best_schedule
 
-
-    def sample(self, number):
+    def find_schedule(self, number):
+        '''Metod som tar fram number antal scheman och 
+        väljer ut det bästa. Den returnerar schemat, i vilken iteration
+        det hittades och vilken poäng det fick. find_schedule agerar 
+        samordnings 
+        '''
         schedule = []
         best_schedule = []
         # Loop som evaluerar kvaliten på ett schema.
@@ -146,46 +182,69 @@ class FHR:
         it = 0
         best_score = 0
         while it < number:
+            # Gör ett schema
             schedule = self.make_schedule()
+            # Ge poäng
             score = self.evaluate(schedule)
+            # Om det bästa, kom ihåg det!
             if score > best_score:
                 iteration_found = it
                 best_schedule = schedule
                 best_score = score
     
             it += 1
-        return best_schedule, iteration_found, best_score
+        return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
-# Lägg detta i en run-funktion och en init-metod!
 
-start_time = time.time()
+    def sample(self, number):
+        # Hämtar antal kärnor på datorn för att veta hur många processer
+        # man ska dela upp programmet på.
+        cores = os.cpu_count()
+        # Använder modulen concurrent.futures för att hantera MP.
+        with future.ProcessPoolExecutor() as ex:
+            # Antal iterationer av schema funktionen per process
+            sub_num = number // cores
+            # Lägger dessa i en lista för att använda map-funktionen
+            sub_nums = [sub_num for _ in range(cores)]
+            # Lägger till eventuell rest i ettan för att det ändå ska vara exakt
+            sub_nums[0] += number % cores
+            # Vi kör över alla kärnor. Detta tar upp 100% av CPU:n
+            results = ex.map(self.find_schedule, sub_nums)
+            # Loopar över alla resultat och hämtar det bästa.
+            for index, result in enumerate(results):
+                if result['score'] > self.best_schedule['score']:
+                    self.best_schedule = result
+                    self.best_schedule['iteration'] += sum(sub_nums[0:index + 1])
+        
+            return self.best_schedule
 
-participants_dict = {
-    "Martin": "Kantorn",
-    "Majd": "Flogsta",
-    "Linda": "Flogsta",
-    "Alex": "Rackis",
-    "Tyra": "Kantorn",
-    "Melker": "Rackis",
-    "Alva": "Rackis",
-    "Clas": "Kantorn",
-    "Joar": "Flogsta",
-    "Tyra 2": "Kantorn",
-    "Sofia": "Rackis",
-    "Mattias": "Flogsta",
-    "Oskar" : "Flogsta",
-    "Emil" : "Kantorn",
-    "Alice" : "Rackis",
-    "Johan" : "Kantorn"
-}
 
- 
-# Tar fram hundra olika slumpade listor och väljer bästa alternativet.
-# Fungerar just nu bara för 3.
-femma = FHR(participants_dict, stops = 3)
-best_schedule, iteration_found, best_score = femma.sample(100000)
+if __name__ == '__main__':
 
-femma.print_array(best_schedule)
-print("Poäng: ", best_score)
-print("Hittades i iteration: ", iteration_found)
-print(f"Det tog {time.time() - start_time} sekunder")
+    start_time = time.time()
+
+    participants_dict = {
+        "Martin": "Kantorn",
+        "Majd": "Flogsta",
+        "Linda": "Flogsta",
+        "Alex": "Rackis",
+        "Tyra A": "Kantorn",
+        "Melker": "Rackis",
+        "Alva": "Rackis",
+        "Clas": "Kantorn",
+        "Joar": "Flogsta",
+        "Tyra S": "Kantorn",
+        "Sofia": "Rackis",
+        "Mattias": "Flogsta",
+        "Oskar" : "Flogsta",
+        "Emil" : "Kantorn",
+        "Alice" : "Rackis",
+        "Johan" : "Kantorn"
+    }
+
+    # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
+    # Fungerar just nu bara för 3.
+    femma = FHR(participants_dict, stops = 3)
+    best_result = femma.sample(1000)
+    print(femma)
+    print(f"Det tog {time.time() - start_time} sekunder")
