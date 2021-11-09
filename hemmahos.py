@@ -59,8 +59,10 @@ class FHR:
             self.participants_dict = participants_dict
         print(self.participants_dict)
         self.stops = stops; 
-        #Tar fram den nödvändiga gruppstorleken.
-        self.group_size = len(self.participants_dict) // stops
+        # Gruppstorleken är i det optimala fallet optimalt antal stopp
+        self.group_size =  stops
+        # Antal hosts per stopp blir följande: 
+        self.num_hosts = len(self.participants_dict) // stops
         self.participants_list = list(self.participants_dict.keys())
         # Börja med tomt schema
         self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
@@ -115,16 +117,12 @@ class FHR:
                 self.array[k][i] = host
         return self.array
 
-    def assign_to_host(self, host, i):
+    def assign_to_host(self, host, i, random_places):
         '''Placerar ut slumpmässiga deltagare (participants_list) till angiven
         host (host) vid angivet stopp (i) i angivet schema (array)
         '''
-        for k in range(self.group_size-2):
-            random_places = list(range(0, len(self.participants_list)))
-            random.shuffle(random_places)
+        for k in range(self.group_size - 1):
             random_place = random_places.pop()
-            while self.array[random_place][i] != "" and not all(place[i] != "" for place in self.array):
-                random_place = random_places.pop()
             self.array[random_place][i] = host
         return self.array
 
@@ -150,15 +148,20 @@ class FHR:
         random.shuffle(self.participants_list)
        
         for i in range(1, self.stops + 1):
-            for j in range(0, 1 + len(self.participants_list)//self.group_size):
+            for j in range(0, self.num_hosts):
                 # Placerar ut de som ska hosta hos dem själva först.
-                host = self.participants_list[j + (i * (1 + len(self.participants_list)//self.group_size))]
+                host = self.participants_list[j + ((i-1)*self.num_hosts)]
                 self.array = self.assign_host(host, i)
                 # Placera sedan ut resten.
                 
-            for j in range(0, 1 + len(self.participants_list)//self.group_size):
-                host = self.participants_list[j + (i * (1 + len(self.participants_list)//self.group_size))]
-                self.array = self.assign_to_host(host, i)
+            col = [row[i] for row in self.array]
+            # Tar fram de platser som är kvar att dela ut
+            random_nums = [ind for ind, name in enumerate(col) if name == '']
+            random.shuffle(random_nums)
+
+            for j in range(0, self.num_hosts):
+                host = self.participants_list[j + ((i-1)*self.num_hosts)]
+                self.array = self.assign_to_host(host, i, random_nums[j*(self.group_size - 1): (j+1)*(self.group_size - 1)])
         return self.array
                     
 
@@ -278,6 +281,6 @@ if __name__ == '__main__':
     # Fungerar just nu bara för 3.
     participants_dict = "C:/Users/marti/Downloads/Femma fucking rundan.csv/Femma fucking rundan.csv"
     femma = FHR(participants_dict, stops = 3)
-    best_result = femma.sample(10000)
+    best_result = femma.sample(1000)
     print(femma)
     print(f"Det tog {time.time() - start_time} sekunder")
