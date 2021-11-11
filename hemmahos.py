@@ -50,7 +50,7 @@ class FHR:
     '''
     Klass som innehåller allt godis som hanterar Femma-hos-rundan.
     '''
-    def __init__(self, participants_dict, stops):
+    def __init__(self, participants_dict: dict, stops: int):
 
         if type(participants_dict) is str:
             # We have been given file_path, read from form
@@ -66,9 +66,6 @@ class FHR:
         self.participants_list = list(self.participants_dict.keys())
         # Börja med tomt schema
         self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
-        # schedule_array = make_schedule(schedule_array)
-        # print_array(schedule_array)
-        # print(evaluate(schedule_array))
 
     def __str__(self):
         '''Gör så att man kan kalla print med en instans
@@ -79,7 +76,7 @@ class FHR:
         string += "\nHittades i iteration: " + str(best_result['iteration'])
         return string
 
-    def array_to_str(self,array):
+    def array_to_str(self, array: list) -> str:
         '''Skapar en sträng representation av ett schema
         '''
         string = ''
@@ -87,7 +84,7 @@ class FHR:
             string += str(list) + '\n'
         return string
 
-    def read_form(self, file_path):
+    def read_form(self, file_path: str) -> dict:
         '''Läser in deltagare från svarsfil från google forms.
         '''
         participants_dict = {}
@@ -106,7 +103,7 @@ class FHR:
         return addresses, participants_dict 
             
 
-    def assign_host(self, host, i):
+    def assign_host(self, host: str, i: int) -> list:
         '''Placerar ut en host under ett stopp på
         dennes egna adress så att hen är garanterat
         hemma då folk har dennes hem som stopp.
@@ -117,16 +114,17 @@ class FHR:
                 self.array[k][i] = host
         return self.array
 
-    def assign_to_host(self, host, i, random_places):
+    def assign_to_host(self, host: str, i: int, random_places: list) -> list:
         '''Placerar ut slumpmässiga deltagare (participants_list) till angiven
-        host (host) vid angivet stopp (i) i angivet schema (array)
+        host (host) vid angivet stopp (i) i angivet schema (array). Platserna i
+        schemat har slumpats fram och ges i listan random_places.
         '''
         for k in range(self.group_size - 1):
             random_place = random_places.pop()
             self.array[random_place][i] = host
         return self.array
 
-    def make_empty_schedule(self,):
+    def make_empty_schedule(self) -> list:
         '''Gör ett tomt schema med bara namnkolonnen ifylld.
         '''
         array = []
@@ -134,12 +132,13 @@ class FHR:
             array.append([])
             for j in range(self.stops + 1): 
                 if j == 0: 
+                    # Här hamnar namnen på deltagande
                     array[i].append(list(self.participants_dict.keys())[i])
                 else:
                     array[i].append("")
         return array
 
-    def make_schedule(self):
+    def make_schedule(self) -> list: 
         '''Slumpar fram ett schema
         '''
         self.array = self.make_empty_schedule()
@@ -160,8 +159,11 @@ class FHR:
             random.shuffle(random_nums)
 
             for j in range(0, self.num_hosts):
+                # Tar fram host på samma sätt som tidigare
                 host = self.participants_list[j + ((i-1)*self.num_hosts)]
-                self.array = self.assign_to_host(host, i, random_nums[j*(self.group_size - 1): (j+1)*(self.group_size - 1)])
+                # Placerar ut slumpmässiga personer på den hosten. 
+                self.array = self.assign_to_host(host, i, \
+                    random_nums[j*(self.group_size - 1): (j+1)*(self.group_size - 1)])
         return self.array
                     
 
@@ -231,7 +233,12 @@ class FHR:
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
 
-    def sample(self, number):
+    def sample(self, number: int) -> dict:
+        '''sample är den funktion man kallar på för att få ett schema.
+        Man anger antal "samples" väjla det bästa ifrån så skapar datorn
+        number antal scheman och returnerar det bästa.
+        '''
+
         # Hämtar antal kärnor på datorn för att veta hur många processer
         # man ska dela upp programmet på.
         cores = os.cpu_count()
@@ -257,30 +264,11 @@ class FHR:
 if __name__ == '__main__':
 
     start_time = time.time()
-    '''
-    participants_dict = {
-        "Martin": "Kantorn",
-        "Majd": "Flogsta",
-        "Linda": "Flogsta",
-        "Alex": "Rackis",
-        "Tyra A": "Kantorn",
-        "Melker": "Rackis",
-        "Alva": "Rackis",
-        "Clas": "Kantorn",
-        "Joar": "Flogsta",
-        "Tyra S": "Kantorn",
-        "Sofia": "Rackis",
-        "Mattias": "Flogsta",
-        "Oskar" : "Flogsta",
-        "Emil" : "Kantorn",
-        "Alice" : "Rackis",
-        "Johan" : "Kantorn"
-    }
-    '''
+
     # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
     # Fungerar just nu bara för 3.
     participants_dict = "C:/Users/marti/Downloads/Femma fucking rundan.csv/Femma fucking rundan.csv"
     femma = FHR(participants_dict, stops = 3)
-    best_result = femma.sample(1000)
+    best_result = femma.sample(100)
     print(femma)
     print(f"Det tog {time.time() - start_time} sekunder")
