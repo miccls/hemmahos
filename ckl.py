@@ -255,7 +255,7 @@ class CKL:
             mails[self.participants_dict[row[0]]['mail']] = current_mail
         # Här använder jag klassen MailSender för att göra ett massutskick    
         s = MailSender(self.settings.password, self.settings.sender_email)
-        return s.bulk_send({'fabian.lyander@outlook.com' : list(mails.values())[0]}, subject = self.settings.mail_subject)
+        return s.bulk_send(mails, subject = self.settings.mail_subject)
         
 
 
