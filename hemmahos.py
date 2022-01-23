@@ -6,50 +6,26 @@ Här ska en liten förklaring av koden ligga.
 I schemat som skrivs ut så är första kolonnen 
 namn på alla deltagande och på den raden i de övriga
 kolonnerna står det vilka stopp de har. Indata till 
-detta program är namn och område. Programmet kommer
-i framtiden läsa in och bilda en lista av dessa områden.
-För enkelhetens skull (i början) så kommer alla områdes-byten
-vara lika "dåliga" men framöver kommer man förhoppningsvis kunna skriva
-in address och så beräknas avståndet mellan platserna med koordinater.
-Google har förhoppningsvis någon API heh.
+detta program är ett exceldokument. Koden slumpar sedan 
+en massa scheman av vilka den sedan väljer den som är
+bäst ur ett antal aspekter. Sedan så skapar den en massa
+personliga mail som den till sist skickar ut till de 
+anmälda. För detta används klassen MailSender.
 
-To do:
- Ändra programmet så att det inte är hårdkodat för 3 stopp.
- Det är inlagt så att det ska fungera att bara välja 3 men just nu så går det inte hehe, programmet ger fel.
- Lägg allt i en klass. Ta json eller csv med deltagare som inparameter tillsammans
- med antalet stopp som ska finnas på rundan.
- Dela upp funktionen make_schedule till flera funktioner, exempelvis
- assign_host och assign_to_host.
-
-
-För övrigt. Kör på multiprocessing här. Dela upp antalet önskade försök och kör det på alla kärnor
-Denna datorn som jag skriver detta på, Dell XPS 15, har 6 kärnor vilket är rätt gott. 12 hade vart optimalt.
-Kan man komma in på universitetets linuxmaskiner kan man köra över natten, tiotals
-om inte hundratals miljoner scheman gissningsvis. 
-
-Lite cursed nu att köra multicore men lagra en variabel self.array som programmet ska mecka med 
-
-
-Fram över -> för att verkligen krydda effektiviteten,
-gör lista med alla index när man ska slumpa ut folk, shuffla och poppa värden. Det är mad value jämfört med nu.
-Har lagt in det nu lite lowkey så, men kan säkert bli bättre! Rad 126, den logiska satsen kan nog optimeras lite.
+Konfigurationsparametrar ligger i klassen Settings. 
+Den kan användas för att lätt ändra grejor utan att
+behöva gå in på massa ställen i CKL-klassen.
 
 '''
 
 import random
-import math
-import json
-import numpy as np
-import time
-import csv
-# För multiprocessing
-import concurrent.futures as future
 import os
-from settings import Settings
 import pandas as pd
+import concurrent.futures as future
 from mailsender import MailSender
+from settings import Settings
 
-class FHR:
+class CKL:
     '''
     Klass som innehåller allt godis som hanterar Femma-hos-rundan.
     '''
@@ -73,7 +49,7 @@ class FHR:
 
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         '''Gör så att man kan kalla print med en instans
         av denna klass som parameter.
         '''
@@ -105,13 +81,14 @@ class FHR:
 
         return participants_dict 
     
-    def get_data(self, row):
-        # Returns the form data in a dictionary
+    def get_data(self, row: list) -> dict:
+        '''Återger formulärets data som ett dictionary
+        '''
         
         return {'area' : row[self.settings.area_index], 
             'adress' : row[self.settings.adress_index], 
             'mail' : row[self.settings.mail_index], 
-            'phone' : str(row[self.settings.phone_index]), 
+            'phone' : row[self.settings.phone_index], 
             'name' : row[self.settings.name_index],
             'food' : row[self.settings.food_index],
             'alcohol' : row[self.settings.alcohol_index],
@@ -181,7 +158,7 @@ class FHR:
         return self.array
                     
 
-    def evaluate(self, schedule):
+    def evaluate(self, schedule: list) -> int:
         '''Denna metod evaluerar hur bra ett schema faktiskt är.
         Det är i denna metod man styr vad som är viktigt för ett bra schema.
         Ändrar man hur mycket poängavdrag en viss egenskap ger kommer 
@@ -192,13 +169,13 @@ class FHR:
         for i in range(len(self.participants_dict)):
             previous_stop = schedule[i][0]
             for j in range(1, self.stops + 1):
-                # Hoppas fan detta funkar. Tanke: areas-dictionaryt innehåller 
-                # straff
+                # Här hämtar man straffet från ett evenutellt områdesbyte
                 points -= \
                     self.settings.areas\
                         [self.participants_dict[previous_stop]['area']]\
                         [self.participants_dict[schedule[i][j]]['area']]
                 previous_stop = schedule[i][j]
+                # Här delar man ut pluspoäng ifall hosten sagt att de gärna har sista stoppet
                 if j == self.stops and\
                     self.participants_dict[schedule[i][j]]['last_stop'] == 'Ja':
                     points += self.settings.last_stop_points
@@ -216,7 +193,7 @@ class FHR:
                     points += len(unique_set) - ((2 * self.stops) -1)
         return points
 
-    def get_best_schedule(self):
+    def get_best_schedule(self) -> list:
         '''Metod som returnerar det bästa funna schemat
         '''
         # Detta är ifall sample inte redan körts.
@@ -254,10 +231,11 @@ class FHR:
             it += 1
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
-    def send_mail(self, sch: dict):
+    def send_mail(self, sch: dict) -> bool:
         '''Skapar och skickar mail som passar schemat schedule
         '''
-
+        # Detta dictionary innehåller textstycken som ska ersättas och en funktion som 
+        # hämtar texten de ska ersättas med.
         fill_ins = {'[stopp1]': lambda x: self.participants_dict[x[1]]['adress'],
         '[stopp2]' :  lambda x: self.participants_dict[x[2]]['adress'],
         '[stopp3]' :  lambda x: self.participants_dict[x[3]]['adress'],
@@ -266,17 +244,18 @@ class FHR:
         '[tele1]' : lambda x: self.participants_dict[x[1]]['phone'],
         '[tele2]' : lambda x: self.participants_dict[x[2]]['phone'],
         '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
-
+        # Hämtar schema-arrayn
         schedule = sch['schedule']
         mails = {self.participants_dict[row[0]]['mail'] : '' for row in schedule}
+
         for row in schedule:
             current_mail = self.settings.mail_template
             for key, func in fill_ins.items():
                 current_mail = current_mail.replace(key, str(func(row)))
             mails[self.participants_dict[row[0]]['mail']] = current_mail
-        print(list(mails.values())[0])
+        # Här använder jag klassen MailSender för att göra ett massutskick    
         s = MailSender(self.settings.password, self.settings.sender_email)
-        s.bulk_send({'martincsvardsjo@gmail.com' : list(mails.values())[0]}, subject = self.settings.mail_subject)
+        return s.bulk_send({'fabian.lyander@outlook.com' : list(mails.values())[0]}, subject = self.settings.mail_subject)
         
 
 
@@ -310,18 +289,11 @@ class FHR:
 
 if __name__ == '__main__':
 
-    start_time = time.time()
-
-    # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
-    # Fungerar just nu bara för 3.
     participants_dict = os.path.dirname(os.path.abspath(__file__)) + "\\HKF.xlsx"
-    femma = FHR(participants_dict, stops = 3)
-    #print(femma.participants_dict)
-    best_result = femma.sample(100)
-    femma.send_mail(best_result)
+    ckl = CKL(participants_dict, stops = 3)
+
+    best_result = ckl.sample(100)
     '''-----------------------------
     SENDS THE MAILS
-    #femma.send_mail(best_result)
+    #ckl.send_mail(best_result)
     -----------------------------'''
-    #print(femma)
-    #print(f"Det tog {time.time() - start_time} sekunder")
