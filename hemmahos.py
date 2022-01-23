@@ -45,6 +45,9 @@ import csv
 # För multiprocessing
 import concurrent.futures as future
 import os
+from settings import Settings
+import pandas as pd
+from mailsender import MailSender
 
 class FHR:
     '''
@@ -52,12 +55,12 @@ class FHR:
     '''
     def __init__(self, participants_dict: dict, stops: int):
 
+        self.settings = Settings()
         if type(participants_dict) is str:
             # We have been given file_path, read from form
-            self.addresses, self.participants_dict = self.read_form(participants_dict)
+            self.participants_dict = self.read_form(participants_dict)
         else:
             self.participants_dict = participants_dict
-        print(self.participants_dict)
         self.stops = stops; 
         # Gruppstorleken är i det optimala fallet optimalt antal stopp
         self.group_size =  stops
@@ -66,6 +69,9 @@ class FHR:
         self.participants_list = list(self.participants_dict.keys())
         # Börja med tomt schema
         self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
+        # Områden med best byten
+
+
 
     def __str__(self):
         '''Gör så att man kan kalla print med en instans
@@ -88,21 +94,29 @@ class FHR:
         '''Läser in deltagare från svarsfil från google forms.
         '''
         participants_dict = {}
-        addresses = {}
-        with open(file_path, 'r') as file:
-            reader = csv.reader(file)
-            # Första raden är titlar på frågorna.
-            for row in reader:
-                # Första kolonnen är tidsstämpel, man ska ha plats, adress och namn.
-                if not row[-1].isdigit():
-                    continue
-                assert len(row[1:]) == 3
-                participants_dict[row[1] + ", " + row[-1]] = row[-1]
-                addresses[row[1]] = row[2] 
+        data = pd.read_excel(file_path, dtype = {self.settings.phone_column: str})
+        # Första raden är titlar på frågorna.
+        for _, row in data.iterrows():
+            # Första kolonnen är tidsstämpel, man ska ha plats, adress och namn.
+            # Number of data entries
+            assert len(row[1:]) == 10
+            participants_dict[row[self.settings.name_index]] = self.get_data(row)
+            #print(row)
 
-        return addresses, participants_dict 
-            
-
+        return participants_dict 
+    
+    def get_data(self, row):
+        # Returns the form data in a dictionary
+        
+        return {'area' : row[self.settings.area_index], 
+            'adress' : row[self.settings.adress_index], 
+            'mail' : row[self.settings.mail_index], 
+            'phone' : str(row[self.settings.phone_index]), 
+            'name' : row[self.settings.name_index],
+            'food' : row[self.settings.food_index],
+            'alcohol' : row[self.settings.alcohol_index],
+            'last_stop' : row[self.settings.last_stop_index]}
+                
     def assign_host(self, host: str, i: int) -> list:
         '''Placerar ut en host under ett stopp på
         dennes egna adress så att hen är garanterat
@@ -176,11 +190,19 @@ class FHR:
         points = 100
         # Poängavdrag ifall man lämnar sitt område.
         for i in range(len(self.participants_dict)):
-            previous_stop = self.participants_dict[schedule[i][0]]
+            previous_stop = schedule[i][0]
             for j in range(1, self.stops + 1):
-                if previous_stop != self.participants_dict[schedule[i][j]]:
-                    points -= 1
-                previous_stop = self.participants_dict[schedule[i][j]]
+                # Hoppas fan detta funkar. Tanke: areas-dictionaryt innehåller 
+                # straff
+                points -= \
+                    self.settings.areas\
+                        [self.participants_dict[previous_stop]['area']]\
+                        [self.participants_dict[schedule[i][j]]['area']]
+                previous_stop = schedule[i][j]
+                if j == self.stops and\
+                    self.participants_dict[schedule[i][j]]['last_stop'] == 'Ja':
+                    points += self.settings.last_stop_points
+                    
         # Poängavdrag ifall man träffar samma par flera gånger.
         # Vi tar en rad och kollar dubletter i alla rader under den.
         # På så vis råkar vi aldrig ta samma par flera gånger.
@@ -205,7 +227,7 @@ class FHR:
         else:
             return self.best_schedule
 
-    def find_schedule(self, number):
+    def find_schedule(self, number: int) -> dict:
         '''Metod som tar fram number antal scheman och 
         väljer ut det bästa. Den returnerar schemat, i vilken iteration
         det hittades och vilken poäng det fick. find_schedule agerar 
@@ -231,6 +253,31 @@ class FHR:
     
             it += 1
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
+
+    def send_mail(self, sch: dict):
+        '''Skapar och skickar mail som passar schemat schedule
+        '''
+
+        fill_ins = {'[stopp1]': lambda x: self.participants_dict[x[1]]['adress'],
+        '[stopp2]' :  lambda x: self.participants_dict[x[2]]['adress'],
+        '[stopp3]' :  lambda x: self.participants_dict[x[3]]['adress'],
+        '[foodpreference]' : lambda x: str([self.participants_dict[stop]['food'] for stop in x[1:]])[1:-1].replace("'", " "),
+        '[alcoholpreference]' : lambda x: str([self.participants_dict[stop]['alcohol'] for stop in x[1:]])[1:-1].replace("'", " "),
+        '[tele1]' : lambda x: self.participants_dict[x[1]]['phone'],
+        '[tele2]' : lambda x: self.participants_dict[x[2]]['phone'],
+        '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
+
+        schedule = sch['schedule']
+        mails = {self.participants_dict[row[0]]['mail'] : '' for row in schedule}
+        for row in schedule:
+            current_mail = self.settings.mail_template
+            for key, func in fill_ins.items():
+                current_mail = current_mail.replace(key, str(func(row)))
+            mails[self.participants_dict[row[0]]['mail']] = current_mail
+        print(list(mails.values())[0])
+        s = MailSender(self.settings.password, self.settings.sender_email)
+        s.bulk_send({'martincsvardsjo@gmail.com' : list(mails.values())[0]}, subject = self.settings.mail_subject)
+        
 
 
     def sample(self, number: int) -> dict:
@@ -267,8 +314,14 @@ if __name__ == '__main__':
 
     # Tar fram hundra olika slumpade listor och väljer bästa alternativet.
     # Fungerar just nu bara för 3.
-    participants_dict = "C:/Users/marti/Downloads/Femma fucking rundan.csv/Femma fucking rundan.csv"
+    participants_dict = os.path.dirname(os.path.abspath(__file__)) + "\\HKF.xlsx"
     femma = FHR(participants_dict, stops = 3)
+    #print(femma.participants_dict)
     best_result = femma.sample(100)
-    print(femma)
-    print(f"Det tog {time.time() - start_time} sekunder")
+    femma.send_mail(best_result)
+    '''-----------------------------
+    SENDS THE MAILS
+    #femma.send_mail(best_result)
+    -----------------------------'''
+    #print(femma)
+    #print(f"Det tog {time.time() - start_time} sekunder")
