@@ -32,12 +32,4 @@ class MailSender:
             return False
 
 if __name__ == '__main__':
-    mail = MailSender('futftuppen1', 'schemacykelsittning@gmail.com')
-    msg = "Subject: SCHEMA\
-            Här kommer ditt schema för kvällen!!\n\
-            Du kommer ha stoppen [stopp1] -> [stopp2] -> [stopp3].\
-            Du som värd har gäster med följande matpreferenser:\n\t [foodpreference]\n\
-            och följande alkoholpreferenser:\n\t [alcoholpreference]\n\
-            Vänligt halsande!"
- 
-    mail.bulk_send({'tyra_axen@hotmail.se' : msg})
+    pass
