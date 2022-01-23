@@ -1,4 +1,4 @@
-from hemmahos import FHR
+from ckl import CKL
 from matplotlib import pyplot as plt
 
 if __name__ == '__main__':
