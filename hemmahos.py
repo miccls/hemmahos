@@ -293,6 +293,7 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
 
     best_result = ckl.sample(100)
+    print(ckl)
     '''-----------------------------
     SENDS THE MAILS
     #ckl.send_mail(best_result)
