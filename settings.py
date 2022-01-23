@@ -3,6 +3,8 @@
 class Settings:
 
     def __init__(self) -> None:
+
+        #---------------------- Index för data från formulär ---------------------
         self.name_index = 2
         self.phone_index = 3
         self.mail_index = 4
@@ -13,9 +15,8 @@ class Settings:
         self.alcohol_index = 9
         self.phone_column = 'Värdens telefonnummer'
 
-        # Poäng för evaluering
+        #---------------------- Poäng för evaluering ---------------------
         self.last_stop_points = 4
-
         areas = {'Flogsta' : [0, 3, 1, 1, 3, 2, 2],
             'Kantorn - Väktargatan - Djäknegatan' : [3, 0, 3, 1, 1, 2, 2],
             'Rosendal' : [1, 3, 0, 2, 3, 2, 2],
@@ -26,6 +27,9 @@ class Settings:
         # Makes a dict with form -> [from][to] = penalty
         self.areas = {area1: {area2 : grade2 for area2, grade2 in zip(areas.keys(), grade1)}\
             for area1, grade1 in areas.items()}
+
+        #----------------- Mailrealterade inställningar ----------------------
+
 
         self.mail_template = '\
             <html>\
@@ -46,7 +50,6 @@ class Settings:
             </body>\
             </html>\
             '
-
         self.mail_subject = 'Cykelsittning'
         self.password = 'futftuppen1'
         self.sender_email = 'schemacykelsittning@gmail.com'
