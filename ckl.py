@@ -63,7 +63,7 @@ class CKL:
         '''
         string = ''
         for list in array:
-            string += str(list) + '\n'
+            string += str(list) + str(self.give_row_points(list)) + '\n'
         return string
 
     def read_form(self, file_path: str) -> dict:
@@ -165,6 +165,7 @@ class CKL:
         karaktären hos scheman ändras.
         '''
         points = 100
+        
         # Poängavdrag ifall man lämnar sitt område.
         for i in range(len(self.participants_dict)):
             previous_stop = schedule[i][0]
@@ -174,11 +175,12 @@ class CKL:
                     self.settings.areas\
                         [self.participants_dict[previous_stop]['area']]\
                         [self.participants_dict[schedule[i][j]]['area']]
-                previous_stop = schedule[i][j]
+
                 # Här delar man ut pluspoäng ifall hosten sagt att de gärna har sista stoppet
                 if j == self.stops and\
                     self.participants_dict[schedule[i][j]]['last_stop'] == 'Ja':
                     points += self.settings.last_stop_points
+                
                     
         # Poängavdrag ifall man träffar samma par flera gånger.
         # Vi tar en rad och kollar dubletter i alla rader under den.
@@ -231,6 +233,25 @@ class CKL:
             it += 1
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
+    def give_row_points(self, row):
+        temp_points = 0
+        previous_stop = row[1]
+        for j in range(1, self.stops + 1):
+            # Här hämtar man straffet från ett evenutellt områdesbyte
+            temp_points -= \
+                self.settings.areas\
+                    [self.participants_dict[previous_stop]['area']]\
+                    [self.participants_dict[row[j]]['area']]
+            previous_stop = row[j]
+            ############# TEST
+            # Här delar man ut pluspoäng ifall hosten sagt att de gärna har sista stoppet
+            if j == self.stops and\
+                self.participants_dict[row[j]]['last_stop'] == 'Ja':
+                ######## TEST
+                temp_points += self.settings.last_stop_points
+        return temp_points
+
+
     def send_mail(self, sch: dict) -> bool:
         '''Skapar och skickar mail som passar schemat schedule
         '''
@@ -256,6 +277,16 @@ class CKL:
         # Här använder jag klassen MailSender för att göra ett massutskick    
         s = MailSender(self.settings.password, self.settings.sender_email)
         return s.bulk_send(mails, subject = self.settings.mail_subject)
+    
+    def save_as_txt(self, schedule) -> None:
+        '''Saves a text copy of the schedule
+        '''
+        print(schedule)
+        with open(os.path.dirname(os.path.abspath(__file__)) + self.settings.textfilename, 'a+') as f:
+            for row in schedule:
+                f.write(str(row) + '\n')
+
+
         
 
 
@@ -291,10 +322,19 @@ if __name__ == '__main__':
 
     participants_dict = os.path.dirname(os.path.abspath(__file__)) + "\\HKF.xlsx"
     ckl = CKL(participants_dict, stops = 3)
+    #----------------Number of iterations-------------------
 
-    best_result = ckl.sample(100)
-    print(ckl)
-    '''-----------------------------
-    SENDS THE MAILS
-    #ckl.send_mail(best_result)
-    -----------------------------'''
+    num = 300
+
+    #-------------------------------------------------------
+    best_result = ckl.sample(num)
+    #print(ckl)
+    ckl.save_as_txt(ckl.best_schedule['schedule'])
+    ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
+    if ok.lower() == 'ja':
+        '''-----------------------------
+        SENDS THE MAILS
+        #ckl.send_mail(best_result)
+        -----------------------------'''
+    else:
+        pass

@@ -16,14 +16,14 @@ class Settings:
         self.phone_column = 'Värdens telefonnummer'
 
         #---------------------- Poäng för evaluering ---------------------
-        self.last_stop_points = 4
-        areas = {'Flogsta' : [0, 3, 1, 1, 3, 2, 2],
-            'Kantorn - Väktargatan - Djäknegatan' : [3, 0, 3, 1, 1, 2, 2],
-            'Rosendal' : [1, 3, 0, 2, 3, 2, 2],
-            'Rackarberget - Studentvägen' : [1, 1, 2, 0, 2, 2, 1],
-            'Sala Backe - Gränby' : [3, 1, 3, 2, 0, 1, 2],
+        self.last_stop_points = 5
+        areas = {'Flogsta' : [0, 5, 2, 1, 3, 2, 2],
+            'Kantorn - Väktargatan - Djäknegatan' : [5, 0, 5, 1, 1, 2, 1],
+            'Rosendal' : [2, 5, 0, 2, 5, 2, 2],
+            'Rackarberget - Studentvägen' : [1, 1, 2, 0, 2, 2, 0],
+            'Sala Backe - Gränby' : [5, 1, 5, 2, 0, 1, 2],
             'Fålhagen - Industristaden' : [2, 2, 2, 2, 1, 0, 1],
-            'Luthagen' : [2, 2, 2, 1, 2, 1, 0]}
+            'Luthagen' : [2, 1, 2, 0, 2, 1, 0]}
         # Makes a dict with form -> [from][to] = penalty
         self.areas = {area1: {area2 : grade2 for area2, grade2 in zip(areas.keys(), grade1)}\
             for area1, grade1 in areas.items()}
@@ -53,6 +53,11 @@ class Settings:
         self.mail_subject = 'Cykelsittning'
         self.password = 'futftuppen1'
         self.sender_email = 'schemacykelsittning@gmail.com'
+
+
+        self.textfilename = 'schema.txt'
+
+
 
 if __name__ == '__main__':
     s = Settings()
