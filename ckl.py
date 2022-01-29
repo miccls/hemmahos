@@ -17,7 +17,7 @@ Den kan användas för att lätt ändra grejor utan att
 behöva gå in på massa ställen i CKL-klassen.
 
 '''
-
+import time
 import random
 import os
 import pandas as pd
@@ -54,8 +54,8 @@ class CKL:
         av denna klass som parameter.
         '''
         string = self.array_to_str(self.best_schedule['schedule'])
-        string += "\nPoäng: " + str(best_result['score'])
-        string += "\nHittades i iteration: " + str(best_result['iteration'])
+        string += "\nPoäng: " + str(self.best_schedule['score'])
+        string += "\nHittades i iteration: " + str(self.best_schedule['iteration'])
         return string
 
     def array_to_str(self, array: list) -> str:
@@ -70,29 +70,17 @@ class CKL:
         '''Läser in deltagare från svarsfil från google forms.
         '''
         participants_dict = {}
-        data = pd.read_excel(file_path, dtype = {self.settings.phone_column: str})
+        data = pd.read_excel(file_path, dtype = {self.settings.phone_column: str}, engine = 'openpyxl')
         # Första raden är titlar på frågorna.
         for _, row in data.iterrows():
             # Första kolonnen är tidsstämpel, man ska ha plats, adress och namn.
             # Number of data entries
             assert len(row[1:]) == 10
-            participants_dict[row[self.settings.name_index]] = self.get_data(row)
+            participants_dict[row[self.settings.name_index]] = self.settings.get_data(row)
             #print(row)
 
         return participants_dict 
     
-    def get_data(self, row: list) -> dict:
-        '''Återger formulärets data som ett dictionary
-        '''
-        
-        return {'area' : row[self.settings.area_index], 
-            'adress' : row[self.settings.adress_index], 
-            'mail' : row[self.settings.mail_index], 
-            'phone' : row[self.settings.phone_index], 
-            'name' : row[self.settings.name_index],
-            'food' : row[self.settings.food_index],
-            'alcohol' : row[self.settings.alcohol_index],
-            'last_stop' : row[self.settings.last_stop_index]}
                 
     def assign_host(self, host: str, i: int) -> list:
         '''Placerar ut en host under ett stopp på
@@ -252,7 +240,7 @@ class CKL:
         return temp_points
 
 
-    def send_mail(self, sch: dict) -> bool:
+    def send_route_mail(self, sch: dict) -> bool:
         '''Skapar och skickar mail som passar schemat schedule
         '''
         # Detta dictionary innehåller textstycken som ska ersättas och en funktion som 
@@ -274,9 +262,8 @@ class CKL:
             for key, func in fill_ins.items():
                 current_mail = current_mail.replace(key, str(func(row)))
             mails[self.participants_dict[row[0]]['mail']] = current_mail
-        # Här använder jag klassen MailSender för att göra ett massutskick    
-        s = MailSender(self.settings.password, self.settings.sender_email)
-        return s.bulk_send(mails, subject = self.settings.mail_subject)
+    
+        return self.send_mails(mails)
     
     def save_as_txt(self, schedule) -> None:
         '''Saves a text copy of the schedule
@@ -287,7 +274,22 @@ class CKL:
                 f.write(str(row) + '\n')
 
 
-        
+    def send_confirmation_mail(self) -> bool:
+        '''Skickar bekräftelsemail till alla deltagare
+        '''        
+        mails = {data['mail']: self.settings.confirmation_mail\
+            for data in self.participants_dict.values()}
+        return self.send_mails(mails)
+            
+    def send_mails(self, mails, subject = None) -> bool:
+        '''Implementerar MailSenderklassen för att skicka mailen
+        i mails-variabeln
+        '''
+        if subject is None:
+            subject = self.settings.mail_subject
+        s = MailSender(self.settings.password, self.settings.sender_email)
+        return s.bulk_send(mails, subject = subject)
+
 
 
     def sample(self, number: int) -> dict:
@@ -324,17 +326,22 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
-    num = 300
-
+    num = 3000
+    
     #-------------------------------------------------------
+
+    #print(ckl.participants_dict.values())
+    #ckl.send_confirmation_mail()
+    start = time.time()
     best_result = ckl.sample(num)
+    print(time.time() - start)
     #print(ckl)
-    ckl.save_as_txt(ckl.best_schedule['schedule'])
-    ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
-    if ok.lower() == 'ja':
-        '''-----------------------------
+    #ckl.save_as_txt(ckl.best_schedule['schedule'])
+    #ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
+    #if ok.lower() == 'ja':
+    '''-----------------------------
         SENDS THE MAILS
-        #ckl.send_mail(best_result)
+        #ckl.send_route_mail(best_result)
         -----------------------------'''
-    else:
-        pass
+    #else:
+    #    pass
