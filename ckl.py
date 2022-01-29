@@ -271,7 +271,7 @@ class CKL:
         print(schedule)
         with open(os.path.dirname(os.path.abspath(__file__)) + self.settings.textfilename, 'a+') as f:
             for row in schedule:
-                f.write(str(row) + '\n')
+                f.write(str(row) + str(self.give_row_points(list)) + '\n')
 
 
     def send_confirmation_mail(self) -> bool:
@@ -322,7 +322,7 @@ class CKL:
 
 if __name__ == '__main__':
 
-    participants_dict = os.path.dirname(os.path.abspath(__file__)) + "\\HKF.xlsx"
+    participants_dict = os.path.dirname(os.path.abspath(__file__)) + "/HKF.xlsx"
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
