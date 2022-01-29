@@ -271,7 +271,7 @@ class CKL:
         print(schedule)
         with open(os.path.dirname(os.path.abspath(__file__)) + self.settings.textfilename, 'a+') as f:
             for row in schedule:
-                f.write(str(row) + str(self.give_row_points(list)) + '\n')
+                f.write(str(row) + str(self.give_row_points(row)) + '\n')
 
 
     def send_confirmation_mail(self) -> bool:
@@ -336,7 +336,7 @@ if __name__ == '__main__':
     best_result = ckl.sample(num)
     print(time.time() - start)
     #print(ckl)
-    #ckl.save_as_txt(ckl.best_schedule['schedule'])
+    ckl.save_as_txt(ckl.best_schedule['schedule'])
     #ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
     #if ok.lower() == 'ja':
     '''-----------------------------
