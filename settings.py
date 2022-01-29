@@ -3,6 +3,12 @@
 class Settings:
 
     def __init__(self) -> None:
+        #------------------------- Kategorilösa inställningar ---------------------
+        # FUTF:s swish
+        self.swish_number = "123 158 89 46"
+        # Pris som visas i bekräftelse mail
+        self.price = "40"
+
 
         #---------------------- Index för data från formulär ---------------------
         self.name_index = 2
@@ -30,6 +36,7 @@ class Settings:
 
         #----------------- Mailrealterade inställningar ----------------------
 
+        # Dessa mail kan man ha i textfiler så folk slipper gå in och mecka med koden. 
 
         self.mail_template = '\
             <html>\
@@ -50,14 +57,40 @@ class Settings:
             </body>\
             </html>\
             '
+
+        self.confirmation_mail = f'\
+            <html>\
+            <body>\
+                <meta charset="utf-8">\
+                <h1><span style="color:#0713f0";>Håll </span><span style="color:#006600";>Käften</span> & <span style="color:#f1b434";>Försvinn</span></h1>\
+                <p>Kul att du har anmält dig till cykelsittningen!!<br>\
+                För att behålla eran plats och vara med på evenemanget behöver ni bara\
+                swisha {self.price}kr till {self.swish_number} med värdens telefon. (Dvs det telefonnummer ni anmälde så vi kan se vem betalningen kommer ifrån)\
+                </p>\
+            </body>\
+            </html>\
+        '
+        # Ganska self-explanatory
         self.mail_subject = 'Cykelsittning'
         self.password = 'futftuppen1'
         self.sender_email = 'schemacykelsittning@gmail.com'
 
-
+        # Namnet på textfilen som innehåller det färdiga schemat.
         self.textfilename = 'schema.txt'
 
-
+    def get_data(self, row: list) -> dict:
+        '''Återger formulärets data som ett dictionary
+        '''
+        # Har lagt denna metod här då jag tycker att 
+        # namnen på alla svar (food, area osv) är lite av en inställning.
+        return {'area' : row[self.area_index], 
+            'adress' : row[self.adress_index], 
+            'mail' : row[self.mail_index], 
+            'phone' : row[self.phone_index], 
+            'name' : row[self.name_index],
+            'food' : row[self.food_index],
+            'alcohol' : row[self.alcohol_index],
+            'last_stop' : row[self.last_stop_index]}
 
 if __name__ == '__main__':
     s = Settings()

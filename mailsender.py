@@ -1,5 +1,6 @@
 
 import smtplib, ssl
+from settings import Settings
 from email.mime.text import MIMEText
 
 class MailSender:
@@ -18,6 +19,7 @@ class MailSender:
         '''
 
         try:
+            # Sätter upp en server som man skickar mailen från
             with smtplib.SMTP_SSL(self.smtp_server, self.port, context = self.context) as server:
                 server.login(self.sender_email, self.password)
                 for receiver_email, message in mails.items():
@@ -32,4 +34,7 @@ class MailSender:
             return False
 
 if __name__ == '__main__':
-    pass
+    s = Settings()
+    conmail = s.confirmation_mail
+    ml = MailSender(s.password, s.sender_email)
+    ml.bulk_send({'martincsvardsjo@gmail.com' : conmail}, 'Bekräftelse')
