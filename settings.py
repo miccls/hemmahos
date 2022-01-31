@@ -8,8 +8,6 @@ class Settings:
         self.swish_number = "123 158 89 46"
         # Pris som visas i bekräftelse mail
         self.price = "40"
-
-
         #---------------------- Index för data från formulär ---------------------
         self.name_index = 2
         self.phone_index = 3
@@ -63,9 +61,10 @@ class Settings:
             <body>\
                 <meta charset="utf-8">\
                 <h1><span style="color:#0713f0";>Håll </span><span style="color:#006600";>Käften</span> & <span style="color:#f1b434";>Försvinn</span></h1>\
-                <p>Kul att du har anmält dig till cykelsittningen!!<br>\
+                <p>Kul att ni har anmält er till cykelsittningen!!<br>\
                 För att behålla eran plats och vara med på evenemanget behöver ni bara\
-                swisha {self.price}kr till {self.swish_number} med värdens telefon. (Dvs det telefonnummer ni anmälde så vi kan se vem betalningen kommer ifrån)\
+                swisha {self.price}kr ({int(self.price)/2} kr var) till {self.swish_number} med värdens telefon. (Dvs det telefonnummer ni anmälde så vi kan se vem betalningen kommer ifrån)<br>\
+                <strong>Betala senast tisdag 1:a februari, betalningar efter det datumet tas inte emot och du förlorar din plats!</strong>\
                 </p>\
             </body>\
             </html>\

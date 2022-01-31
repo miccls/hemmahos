@@ -16,6 +16,21 @@ Konfigurationsparametrar ligger i klassen Settings.
 Den kan användas för att lätt ändra grejor utan att
 behöva gå in på massa ställen i CKL-klassen.
 
+
+Slumpa en lista av ja-tackare som är max en tredjedel av antalet cyklare,
+fyll på den med andra deltagare om det behövs. 
+Placera sedan ut dessa på sista stoppet och gör sedan din grej bror
+
+Kodexempel:
+last_stoppers = [part for part in participants_list if participants_dict[part]["last_stop"] == Ja]
+nbr = len(last_stoppers)
+if self.num_hosts - nbr >= 0:
+    # Fyll på med self.num_hosts-nbr antal personer
+the_rest = return list(set(participants_list)-set(last_stoppers))
+random.shuffle(the_rest)
+for första och andra stoppet in range(self.number of hosts):
+    placera ut the_rest(i)
+
 '''
 import time
 import random
@@ -122,27 +137,47 @@ class CKL:
         '''
         self.array = self.make_empty_schedule()
 
-        # Blanda listan 
-        random.shuffle(self.participants_list)
-       
+        last_stoppers = [part for part in self.participants_list if self.participants_dict[part]["last_stop"] == 'Ja']
+        nbr = len(last_stoppers)
+        the_rest = list(set(self.participants_list)-set(last_stoppers))
+        # Blanda upp
+        random.shuffle(the_rest)
+        random.shuffle(last_stoppers)
+
+        if self.num_hosts - nbr > 0:
+            # Fyll på med self.num_hosts-nbr antal personer
+            for _ in range(self.num_hosts - nbr):
+                last_stoppers.append(the_rest.pop())
+        else:
+            for _ in range(nbr - self.num_hosts):
+                the_rest.append(last_stoppers.pop())
+
+        first_col = [row[0] for row in self.array]
+
+        # Placera ut alla på sista stoppet
+        for i, part in enumerate(first_col):
+            if part in last_stoppers:
+                self.array[i][-1] = part
+
+        # Placera ut resten av alla hosts.
+        for i in range(1, self.stops):
+            for _ in range(self.num_hosts):
+                host = the_rest.pop()
+                self.array[first_col.index(host)][i] = host
+
         for i in range(1, self.stops + 1):
-            for j in range(0, self.num_hosts):
-                # Placerar ut de som ska hosta hos dem själva först.
-                host = self.participants_list[j + ((i-1)*self.num_hosts)]
-                self.array = self.assign_host(host, i)
-                # Placera sedan ut resten.
-                
+
             col = [row[i] for row in self.array]
             # Tar fram de platser som är kvar att dela ut
             random_nums = [ind for ind, name in enumerate(col) if name == '']
+            hosts = [name for ind, name in enumerate(col) if name != ''] 
             random.shuffle(random_nums)
+            hosts_w_index = {host : random_nums[2*i:2*(i + 1)] for i, host in enumerate(hosts)}
 
-            for j in range(0, self.num_hosts):
-                # Tar fram host på samma sätt som tidigare
-                host = self.participants_list[j + ((i-1)*self.num_hosts)]
-                # Placerar ut slumpmässiga personer på den hosten. 
-                self.array = self.assign_to_host(host, i, \
-                    random_nums[j*(self.group_size - 1): (j+1)*(self.group_size - 1)])
+            for host, indices in hosts_w_index.items():
+                for index in indices:
+                    self.array[index][i] = host
+
         return self.array
                     
 
@@ -326,22 +361,20 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
-    num = 3000
+    num = 100_000
     
     #-------------------------------------------------------
-
+    #print(len(ckl.participants_list))
     #print(ckl.participants_dict.values())
     #ckl.send_confirmation_mail()
-    start = time.time()
+    #start = time.time()
     best_result = ckl.sample(num)
-    print(time.time() - start)
-    #print(ckl)
-    ckl.save_as_txt(ckl.best_schedule['schedule'])
-    #ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
-    #if ok.lower() == 'ja':
-    '''-----------------------------
-        SENDS THE MAILS
-        #ckl.send_route_mail(best_result)
-        -----------------------------'''
+    #print(time.time() - start)
+    print(ckl)
+    #ckl.save_as_txt(ckl.best_schedule['schedule'])
+    ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
+    if ok.lower() == 'ja':
+        ckl.send_route_mail(best_result)
+
     #else:
     #    pass

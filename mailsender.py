@@ -37,4 +37,4 @@ if __name__ == '__main__':
     s = Settings()
     conmail = s.confirmation_mail
     ml = MailSender(s.password, s.sender_email)
-    ml.bulk_send({'martincsvardsjo@gmail.com' : conmail}, 'Bekräftelse')
+    ml.bulk_send({'fabian.lyander@outlook.com' : conmail}, 'Bekräftelse')
