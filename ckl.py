@@ -96,27 +96,6 @@ class CKL:
 
         return participants_dict 
     
-                
-    def assign_host(self, host: str, i: int) -> list:
-        '''Placerar ut en host under ett stopp på
-        dennes egna adress så att hen är garanterat
-        hemma då folk har dennes hem som stopp.
-        array är schemat, i är kolonnen eller stoppet i schemat
-        '''
-        for k in range(len(self.array)):
-            if self.array[k][0] == host:
-                self.array[k][i] = host
-        return self.array
-
-    def assign_to_host(self, host: str, i: int, random_places: list) -> list:
-        '''Placerar ut slumpmässiga deltagare (participants_list) till angiven
-        host (host) vid angivet stopp (i) i angivet schema (array). Platserna i
-        schemat har slumpats fram och ges i listan random_places.
-        '''
-        for k in range(self.group_size - 1):
-            random_place = random_places.pop()
-            self.array[random_place][i] = host
-        return self.array
 
     def make_empty_schedule(self) -> list:
         '''Gör ett tomt schema med bara namnkolonnen ifylld.
@@ -136,9 +115,10 @@ class CKL:
         '''Slumpar fram ett schema
         '''
         self.array = self.make_empty_schedule()
-
+        # Ta fram de som tackat ja till sista stoppet
         last_stoppers = [part for part in self.participants_list if self.participants_dict[part]["last_stop"] == 'Ja']
         nbr = len(last_stoppers)
+        # Ta fram resten
         the_rest = list(set(self.participants_list)-set(last_stoppers))
         # Blanda upp
         random.shuffle(the_rest)
@@ -256,7 +236,9 @@ class CKL:
             it += 1
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
-    def give_row_points(self, row):
+    def give_row_points(self, row: list) -> int:
+        '''För att ge en enskild rad poäng.
+        '''
         temp_points = 0
         previous_stop = row[1]
         for j in range(1, self.stops + 1):
@@ -300,10 +282,9 @@ class CKL:
     
         return self.send_mails(mails)
     
-    def save_as_txt(self, schedule) -> None:
+    def save_as_txt(self, schedule: list) -> None:
         '''Saves a text copy of the schedule
         '''
-        print(schedule)
         with open(os.path.dirname(os.path.abspath(__file__)) + self.settings.textfilename, 'a+') as f:
             for row in schedule:
                 f.write(str(row) + str(self.give_row_points(row)) + '\n')
@@ -316,7 +297,7 @@ class CKL:
             for data in self.participants_dict.values()}
         return self.send_mails(mails)
             
-    def send_mails(self, mails, subject = None) -> bool:
+    def send_mails(self, mails: dict, subject = None) -> bool:
         '''Implementerar MailSenderklassen för att skicka mailen
         i mails-variabeln
         '''
@@ -372,9 +353,12 @@ if __name__ == '__main__':
     #print(time.time() - start)
     print(ckl)
     #ckl.save_as_txt(ckl.best_schedule['schedule'])
-    ok = input("Ser schema ok ut? (ja/nej) \n\t:::")
+    ok = input("Ser schema ok ut? (ja/nej) \n\t::: ")
     if ok.lower() == 'ja':
-        ckl.send_route_mail(best_result)
-
-    #else:
-    #    pass
+        result = ckl.send_route_mail(best_result)
+        if result:
+            print("Alla mail skickade.")
+        else:
+            print("Mailutskick misslyckades.")
+    else:
+       pass
