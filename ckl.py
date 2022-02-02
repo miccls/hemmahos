@@ -216,7 +216,6 @@ class CKL:
         samordnings 
         '''
         schedule = []
-        best_schedule = []
         # Loop som evaluerar kvaliten på ett schema.
         score = 0
         iteration_found = 1
@@ -256,22 +255,33 @@ class CKL:
                 temp_points += self.settings.last_stop_points
         return temp_points
 
+    def get_pref(self, schedule, row: list, pref: str) -> str:
+        '''Hämtar preferenser som gäster har på visst stopp.
+        '''
+        host = row[0]
+        index = row[1:].index(host) + 1
+        # Fixa mat/alk med listcomp.
+        prefs = [self.participants_dict[part[0]][pref] for part in schedule if (part[index] == host)]
+        print(prefs)
+        return str(prefs)
+
 
     def send_route_mail(self, sch: dict) -> bool:
         '''Skapar och skickar mail som passar schemat schedule
         '''
+        # Hämtar schema-arrayn
+        schedule = sch['schedule']
         # Detta dictionary innehåller textstycken som ska ersättas och en funktion som 
         # hämtar texten de ska ersättas med.
         fill_ins = {'[stopp1]': lambda x: self.participants_dict[x[1]]['adress'],
         '[stopp2]' :  lambda x: self.participants_dict[x[2]]['adress'],
         '[stopp3]' :  lambda x: self.participants_dict[x[3]]['adress'],
-        '[foodpreference]' : lambda x: str([self.participants_dict[stop]['food'] for stop in x[1:]])[1:-1].replace("'", " "),
-        '[alcoholpreference]' : lambda x: str([self.participants_dict[stop]['alcohol'] for stop in x[1:]])[1:-1].replace("'", " "),
+        '[foodpreference]' : lambda x: self.get_pref(schedule, x, 'food'),
+        '[alcoholpreference]' : lambda x: self.get_pref(schedule, x, 'alcohol'),
         '[tele1]' : lambda x: self.participants_dict[x[1]]['phone'],
         '[tele2]' : lambda x: self.participants_dict[x[2]]['phone'],
         '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
-        # Hämtar schema-arrayn
-        schedule = sch['schedule']
+        
         mails = {self.participants_dict[row[0]]['mail'] : '' for row in schedule}
 
         for row in schedule:
@@ -279,7 +289,7 @@ class CKL:
             for key, func in fill_ins.items():
                 current_mail = current_mail.replace(key, str(func(row)))
             mails[self.participants_dict[row[0]]['mail']] = current_mail
-    
+     
         return self.send_mails(mails)
     
     def save_as_txt(self, schedule: list) -> None:
@@ -342,7 +352,7 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
-    num = 100_000
+    num = 10_00
     
     #-------------------------------------------------------
     #print(len(ckl.participants_list))
