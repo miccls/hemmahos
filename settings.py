@@ -44,8 +44,8 @@ class Settings:
                 <p>Här kommer din rutt för kvällen!!<br>\
                 Du kommer vara på följande stopp:<br>\
                 <br> <strong>18:30 [stopp1]</strong> Tel: [tele1]<br>\
-                <strong>19:30 [stopp2]</strong> Tel: [tele2]<br>\
-                <strong>20:30 [stopp3]</strong> Tel: [tele3]<br>\
+                <strong>20:00 [stopp2]</strong> Tel: [tele2]<br>\
+                <strong>21:30 [stopp3]</strong> Tel: [tele3]<br>\
                 <br>\
                 Då ni serverar har ni följande matpreferenser: <br>\
                 [foodpreference] <br>\
