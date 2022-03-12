@@ -21,11 +21,11 @@ class Settings:
 
         #---------------------- Poäng för evaluering ---------------------
         self.last_stop_points = 5
-        areas = {'Flogsta' : [0, 5, 2, 1, 3, 2, 2],
-            'Kantorn - Väktargatan - Djäknegatan' : [5, 0, 5, 1, 1, 2, 1],
-            'Rosendal' : [2, 5, 0, 2, 5, 2, 2],
+        areas = {'Flogsta' : [0, 10, 2, 1, 3, 2, 2],
+            'Kantorn - Väktargatan - Djäknegatan' : [10, 0, 10, 1, 1, 2, 1],
+            'Rosendal' : [2, 10, 0, 2, 10, 2, 2],
             'Rackarberget - Studentvägen' : [1, 1, 2, 0, 2, 2, 0],
-            'Sala Backe - Gränby' : [5, 1, 5, 2, 0, 1, 2],
+            'Sala Backe - Gränby' : [10, 1, 10, 2, 0, 1, 2],
             'Fålhagen - Industristaden' : [2, 2, 2, 2, 1, 0, 1],
             'Luthagen' : [2, 1, 2, 0, 2, 1, 0]}
         # Makes a dict with form -> [from][to] = penalty
@@ -50,7 +50,12 @@ class Settings:
                 Då ni serverar har ni följande matpreferenser: <br>\
                 [foodpreference] <br>\
                 och följande alkoholprefrerenser: <br>\
-                [alcoholpreference]\
+                [alcoholpreference] <br> <br>\
+                Vi vill också nämna att ni som inte tryckt i sista stoppet kommer få det och kan\
+                därför också planera för att servera något som inte är efterrätt, så det inte råkar\
+                bli glass, godis och sockervadd till middag hehe.<br> <br>\
+                Slutligen hoppas vi att ni har superkul på rundan och vill informera om att rutten kan komma\
+                att ändras ifall folk blir sjuka eller så. <strong>SES IMORRN!!!</strong>\
                 </p>\
             </body>\
             </html>\
@@ -60,7 +65,7 @@ class Settings:
             <html>\
             <body>\
                 <meta charset="utf-8">\
-                <h1><span style="color:#0713f0";>Håll </span><span style="color:#006600";>Käften</span> & <span style="color:#f1b434";>Försvinn</span></h1>\
+                <h1><font face="Bauhaus 93" size="20px" color="#07fff0">Way</font><span style="color:#0713f0";>Håll </span><span style="color:#006600";>Käften</span> & <span style="color:#f1b434";>Försvinn</span></h1>\
                 <p>Kul att ni har anmält er till cykelsittningen!!<br>\
                 För att behålla eran plats och vara med på evenemanget behöver ni bara\
                 swisha {self.price}kr ({int(self.price)/2} kr var) till {self.swish_number} med värdens telefon. (Dvs det telefonnummer ni anmälde så vi kan se vem betalningen kommer ifrån)<br>\
@@ -69,10 +74,25 @@ class Settings:
             </body>\
             </html>\
         '
+
+        self.mysk_mail ='<html>\
+            <body>\
+                <meta charset="utf-8">\
+                <h1><font  color="#07fff0">Way</font> <span style="color:#808080";><br>\
+                &#160; &#160; &#160; Out</span> <br>\
+                <span style="color:#F1b434";>F</span><span style="color:#808080";>e</span><span style = "color:#000000">STS</span></span></h1>\
+                <p>Grattis, du har fått plats till <span style="color:#07fff0";>W</span>ay out <span style="color:#F1b434";>F</span>eSTS!!<br>\
+                Det är sittning på bridgens och temat är <strong>FESTIVAL</strong>!\
+                För att behålla din plats och vara med på evenemanget behöver du bara\
+                swisha 110 kr till 123 158 89 46 (FUTF). <br>\
+                <strong>Betala senast fredag 11:e mars 23:59, betalningar efter det datumet tas inte emot och du förlorar din plats!</strong>\
+                </p>\
+            </body>\
+            </html>'
         # Ganska self-explanatory
         self.mail_subject = 'Cykelsittning'
-        self.password = 'futftuppen1'
-        self.sender_email = 'schemacykelsittning@gmail.com'
+        self.password = 'jagvillhaflotte123'
+        self.sender_email = 'klubbmastarefutf@gmail.com'
 
         # Namnet på textfilen som innehåller det färdiga schemat.
         self.textfilename = 'schema.txt'

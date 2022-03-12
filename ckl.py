@@ -17,19 +17,8 @@ Den kan användas för att lätt ändra grejor utan att
 behöva gå in på massa ställen i CKL-klassen.
 
 
-Slumpa en lista av ja-tackare som är max en tredjedel av antalet cyklare,
-fyll på den med andra deltagare om det behövs. 
-Placera sedan ut dessa på sista stoppet och gör sedan din grej bror
-
-Kodexempel:
-last_stoppers = [part for part in participants_list if participants_dict[part]["last_stop"] == Ja]
-nbr = len(last_stoppers)
-if self.num_hosts - nbr >= 0:
-    # Fyll på med self.num_hosts-nbr antal personer
-the_rest = return list(set(participants_list)-set(last_stoppers))
-random.shuffle(the_rest)
-for första och andra stoppet in range(self.number of hosts):
-    placera ut the_rest(i)
+Att göra: Så att find_schedule också ta ett godtyckligt dictionary som input 
+så att man ka ge make_groups-grupper till den.
 
 '''
 import time
@@ -39,6 +28,9 @@ import pandas as pd
 import concurrent.futures as future
 from mailsender import MailSender
 from settings import Settings
+import keyboard
+from pprint import pprint
+
 
 class CKL:
     '''
@@ -97,39 +89,41 @@ class CKL:
         return participants_dict 
     
 
-    def make_empty_schedule(self) -> list:
+    def make_empty_schedule(self, participants_dict) -> list:
         '''Gör ett tomt schema med bara namnkolonnen ifylld.
         '''
         array = []
-        for i in range(len(self.participants_dict)):
+        for i in range(len(participants_dict)):
             array.append([])
             for j in range(self.stops + 1): 
                 if j == 0: 
                     # Här hamnar namnen på deltagande
-                    array[i].append(list(self.participants_dict.keys())[i])
+                    array[i].append(list(participants_dict.keys())[i])
                 else:
                     array[i].append("")
         return array
 
-    def make_schedule(self) -> list: 
+    def make_schedule(self, participants_dict) -> list: 
         '''Slumpar fram ett schema
         '''
-        self.array = self.make_empty_schedule()
+        self.array = self.make_empty_schedule(participants_dict)
+        participants_list = [row[0] for row in self.array]
+        num_hosts = len(participants_dict) // self.stops
         # Ta fram de som tackat ja till sista stoppet
-        last_stoppers = [part for part in self.participants_list if self.participants_dict[part]["last_stop"] == 'Ja']
+        last_stoppers = [part for part in participants_list if self.participants_dict[part]["last_stop"] == 'Ja']
         nbr = len(last_stoppers)
         # Ta fram resten
-        the_rest = list(set(self.participants_list)-set(last_stoppers))
+        the_rest = list(set(participants_list)-set(last_stoppers))
         # Blanda upp
         random.shuffle(the_rest)
         random.shuffle(last_stoppers)
 
-        if self.num_hosts - nbr > 0:
+        if num_hosts - nbr > 0:
             # Fyll på med self.num_hosts-nbr antal personer
-            for _ in range(self.num_hosts - nbr):
+            for _ in range(num_hosts - nbr):
                 last_stoppers.append(the_rest.pop())
         else:
-            for _ in range(nbr - self.num_hosts):
+            for _ in range(nbr - num_hosts):
                 the_rest.append(last_stoppers.pop())
 
         first_col = [row[0] for row in self.array]
@@ -141,7 +135,7 @@ class CKL:
 
         # Placera ut resten av alla hosts.
         for i in range(1, self.stops):
-            for _ in range(self.num_hosts):
+            for _ in range(num_hosts):
                 host = the_rest.pop()
                 self.array[first_col.index(host)][i] = host
 
@@ -168,9 +162,8 @@ class CKL:
         karaktären hos scheman ändras.
         '''
         points = 100
-        
         # Poängavdrag ifall man lämnar sitt område.
-        for i in range(len(self.participants_dict)):
+        for i in range(len(schedule)):
             previous_stop = schedule[i][0]
             for j in range(1, self.stops + 1):
                 # Här hämtar man straffet från ett evenutellt områdesbyte
@@ -209,21 +202,38 @@ class CKL:
         else:
             return self.best_schedule
 
-    def find_schedule(self, number: int) -> dict:
+    def schedule_w_groups(self):
+        '''Metod som tvingar ut folk på deras
+        valda områden.
+        '''
+        groups, rest = self.make_groups()
+        # Schedule to which all groups will be appended.
+        sch = []
+        its = 10000
+        for group in (list(groups.values()) + [rest]):
+            group_dict = {name: self.participants_dict[name] for name in group}
+            
+            sch += self.find_schedule(its, group_dict)['schedule']
+        return sch, self.evaluate(sch)
+        
+
+    def find_schedule(self, number: int, participants_dict = None) -> dict:
         '''Metod som tar fram number antal scheman och 
         väljer ut det bästa. Den returnerar schemat, i vilken iteration
         det hittades och vilken poäng det fick. find_schedule agerar 
         samordnings 
         '''
+        if participants_dict is None:
+            participants_dict = self.participants_dict
         schedule = []
         # Loop som evaluerar kvaliten på ett schema.
         score = 0
         iteration_found = 1
         it = 0
         best_score = 0
-        while it < number:
+        while it < number and best_score < 400:
             # Gör ett schema
-            schedule = self.make_schedule()
+            schedule = self.make_schedule(participants_dict)
             # Ge poäng
             score = self.evaluate(schedule)
             # Om det bästa, kom ihåg det!
@@ -233,6 +243,8 @@ class CKL:
                 best_score = score
     
             it += 1
+            
+
         return {'schedule': best_schedule, 'iteration': iteration_found, 'score': best_score}
 
     def give_row_points(self, row: list) -> int:
@@ -262,9 +274,25 @@ class CKL:
         index = row[1:].index(host) + 1
         # Fixa mat/alk med listcomp.
         prefs = [self.participants_dict[part[0]][pref] for part in schedule if (part[index] == host)]
-        print(prefs)
+        # print(prefs)
         return str(prefs)
 
+    def make_groups(self) -> tuple:
+        '''Groups people by area
+        '''
+        groups = {}
+        for area in self.settings.areas.keys():
+            groups[area] = [person for person in \
+                self.participants_dict.keys() if self.participants_dict[person]['area'] == area]
+        # Get rest
+        rest = []
+        for group, participants in groups.items():
+            if len(participants) % 3 != 0:
+                random.shuffle(participants)
+                for _ in range(len(participants) % 3):
+                    rest.append(groups[group].pop())
+        return groups, rest
+        
 
     def send_route_mail(self, sch: dict) -> bool:
         '''Skapar och skickar mail som passar schemat schedule
@@ -276,8 +304,8 @@ class CKL:
         fill_ins = {'[stopp1]': lambda x: self.participants_dict[x[1]]['adress'],
         '[stopp2]' :  lambda x: self.participants_dict[x[2]]['adress'],
         '[stopp3]' :  lambda x: self.participants_dict[x[3]]['adress'],
-        '[foodpreference]' : lambda x: self.get_pref(schedule, x, 'food'),
-        '[alcoholpreference]' : lambda x: self.get_pref(schedule, x, 'alcohol'),
+        '[foodpreference]' : lambda x: self.get_pref(schedule, x, 'food')[1:-1].replace("'", ''),
+        '[alcoholpreference]' : lambda x: self.get_pref(schedule, x, 'alcohol')[1:-1].replace("'", ''),
         '[tele1]' : lambda x: self.participants_dict[x[1]]['phone'],
         '[tele2]' : lambda x: self.participants_dict[x[2]]['phone'],
         '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
@@ -352,23 +380,24 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
-    num = 10_00
+    num = 200
     
     #-------------------------------------------------------
     #print(len(ckl.participants_list))
     #print(ckl.participants_dict.values())
     #ckl.send_confirmation_mail()
+    #ckl.make_groups()
     #start = time.time()
-    best_result = ckl.sample(num)
+    best_result, score = ckl.schedule_w_groups()
     #print(time.time() - start)
-    print(ckl)
+    print(ckl.array_to_str(best_result))
+    print(f"Betyg: {score}")
     #ckl.save_as_txt(ckl.best_schedule['schedule'])
     ok = input("Ser schema ok ut? (ja/nej) \n\t::: ")
     if ok.lower() == 'ja':
-        result = ckl.send_route_mail(best_result)
+        #result = ckl.send_route_mail(best_result)
+        result = False
         if result:
             print("Alla mail skickade.")
         else:
             print("Mailutskick misslyckades.")
-    else:
-       pass

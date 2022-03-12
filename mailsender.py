@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 
 class MailSender:
 
-    def __init__(self, password, sender_email):
+    def __init__(self, password: str, sender_email: str):
         self.port = 465  # For SSL
         self.smtp_server = "smtp.gmail.com" # For using Gmail
         self.sender_email = sender_email
@@ -30,11 +30,12 @@ class MailSender:
                     server.sendmail(self.sender_email, receiver_email, msg.as_string())
             return True
         except Exception as e:
-            print("Sending mails failed with following exception: " + e)
+            print("Sending mails failed with following exception: " + str(e))
             return False
 
 if __name__ == '__main__':
     s = Settings()
-    conmail = s.confirmation_mail
+    conmail = s.mysk_mail
     ml = MailSender(s.password, s.sender_email)
-    ml.bulk_send({'fabian.lyander@outlook.com' : conmail}, 'Bekräftelse')
+
+    ml.bulk_send(mailss, 'Bekräftelse')
