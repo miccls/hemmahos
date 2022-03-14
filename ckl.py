@@ -206,14 +206,31 @@ class CKL:
         '''Metod som tvingar ut folk på deras
         valda områden.
         '''
-        groups, rest = self.make_groups()
-        # Schedule to which all groups will be appended.
-        sch = []
+        get_dict = lambda group: {name: self.participants_dict[name] for name in group}
+        rest_approved = 'n'
         its = 10000
-        for group in (list(groups.values()) + [rest]):
-            group_dict = {name: self.participants_dict[name] for name in group}
-            
+        best_rest_score = 0
+        best_rest = {}
+        while rest_approved not in ['y', 'c']:
+            groups, rest = self.make_groups()
+            # Ger möjligheten att utvärdera rest-schemat.
+            rest_dict = get_dict(rest)
+            rest_sch = self.find_schedule(its, rest_dict)['schedule']
+            score = self.evaluate(rest_sch)
+            print(self.array_to_str(rest_sch), f"\nScore: {score}")
+            if score > best_rest_score:
+                best_rest = rest_sch
+            rest_approved = input('Är resten ok? Ge c för att använda bästa hittils. (y/c/n)\n\t::: ')
+            if rest_approved == 'y':
+                # Sätt senaste till bästa
+                best_rest = rest_sch
+            # Schedule to which all groups will be appended.
+        sch = []
+        for group in (list(groups.values())):
+            group_dict = get_dict(group)
             sch += self.find_schedule(its, group_dict)['schedule']
+        # Lägger på resten.
+        sch += best_rest
         return sch, self.evaluate(sch)
         
 

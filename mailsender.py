@@ -35,7 +35,9 @@ class MailSender:
 
 if __name__ == '__main__':
     s = Settings()
-    conmail = s.mysk_mail
+    mails = ['Sofia@reineck.se ', 'clas.zachrisson99@gmail.com', 'oliver@kraften.net', 'kottsky@gmail.com', 'Lovisj01@hotmail.com ', ' moaet25@gmail.com', 'martin.knebel.e@gmail.com', 'Melker.ernfors@gmail.com ', 'Elsamayspengler@gmail.com ', 'samsamv02@gmail.com', 'Felicia.L.Bengtsson@gmail.com ', 'anton.onils@gmail.com', 'sofia.ekbring@gmail.com', 'Lindholmcarlaxel@gmail.com ', 'svenssondahl@gmail.com', 'Sofiakvist050@gmail.com', 'sofia63.naslund@hotmail.se', 'alva.b.99@live.se', 'alice.gardell@icloud.com', 'ninap21@hotmail.com', 'hasztely@gmail.com', 'karinida.haglund@gmail.com ', 'Elias5@live.se ', 'alicialaurinen@outlook.com', 'emil.vendlegard@gmail.com', 'Kalle.johansson14@gmail.com', 'fabianlindblad@hotmail.se ', 'sofie.s.skold@gmail.com', 'gabrieleriksvensson@gmail.com', 'johan.wallsten@hotmail.com', 'erik.n.nilsson.98@gmail.com', 'Pappannadorottya@gmail.com', 'tovemaria.moller@gmail.com', 'Alex_chelsea@hotmail.se', 'Belmavila@gmail.com', 'Clarakriegholm@gmail.com', '2002vali@gmail.com']
+    mailss = {mail: s.mysk_mail for mail in mails}
+
     ml = MailSender(s.password, s.sender_email)
 
     ml.bulk_send(mailss, 'Bekräftelse')
