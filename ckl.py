@@ -292,7 +292,8 @@ class CKL:
         # Fixa mat/alk med listcomp.
         prefs = [self.participants_dict[part[0]][pref] for part in schedule if (part[index] == host)]
         # print(prefs)
-        return str(prefs)
+        # För att bli av med [ & ]
+        return str(prefs)[1:-1].replace('nan', '')
 
     def make_groups(self) -> tuple:
         '''Groups people by area
@@ -318,6 +319,7 @@ class CKL:
         schedule = sch['schedule']
         # Detta dictionary innehåller textstycken som ska ersättas och en funktion som 
         # hämtar texten de ska ersättas med.
+        # tele1, tele2, tele3 osv hade man kunnat göra mer generellt.
         fill_ins = {'[stopp1]': lambda x: self.participants_dict[x[1]]['adress'],
         '[stopp2]' :  lambda x: self.participants_dict[x[2]]['adress'],
         '[stopp3]' :  lambda x: self.participants_dict[x[3]]['adress'],
@@ -328,12 +330,15 @@ class CKL:
         '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
         
         mails = {self.participants_dict[row[0]]['mail'] : '' for row in schedule}
+        #mails = {'martincsvardsjo@gmail.com' : '' for row in schedule}
 
         for row in schedule:
             current_mail = self.settings.mail_template
             for key, func in fill_ins.items():
                 current_mail = current_mail.replace(key, str(func(row)))
             mails[self.participants_dict[row[0]]['mail']] = current_mail
+            #mails['martincsvardsjo@gmail.com'] = current_mail
+            #break
      
         return self.send_mails(mails)
     
@@ -397,7 +402,7 @@ if __name__ == '__main__':
     ckl = CKL(participants_dict, stops = 3)
     #----------------Number of iterations-------------------
 
-    num = 200
+    num = int(input("Antal samples? "))
     
     #-------------------------------------------------------
     #print(len(ckl.participants_list))
@@ -405,16 +410,22 @@ if __name__ == '__main__':
     #ckl.send_confirmation_mail()
     #ckl.make_groups()
     #start = time.time()
-    best_result, score = ckl.schedule_w_groups()
+    ok = ''
+    # Tvingar ut grupper i deras områden
+    #best_result, score = ckl.schedule_w_groups()
     #print(time.time() - start)
-    print(ckl.array_to_str(best_result))
-    print(f"Betyg: {score}")
-    #ckl.save_as_txt(ckl.best_schedule['schedule'])
-    ok = input("Ser schema ok ut? (ja/nej) \n\t::: ")
-    if ok.lower() == 'ja':
-        #result = ckl.send_route_mail(best_result)
-        result = False
+    while ok == '':
+        best_result = ckl.sample(num)
+
+        print(ckl.array_to_str(best_result['schedule']))
+        print(f"Betyg: {best_result['score']}")
+        ok = input("Ser schema ok ut? (y/n) \n\t::: ")
+    
+    if ok.lower() == 'y':
+        result = ckl.send_route_mail(best_result)
+        #result = False
         if result:
             print("Alla mail skickade.")
+            ckl.save_as_txt(ckl.best_schedule['schedule'])
         else:
-            print("Mailutskick misslyckades.")
+            print("Mailutskick misslyckades.")  

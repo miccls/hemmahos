@@ -40,22 +40,21 @@ class Settings:
             <html>\
             <body>\
                 <meta charset="utf-8">\
-                <h1><span style="color:#0713f0";>Håll </span><span style="color:#006600";>Käften</span> & <span style="color:#f1b434";>Försvinn</span></h1>\
-                <p>Här kommer din rutt för kvällen!!<br>\
+                <h1><span style="color:#00A4FF";>Wave</span></h1>\
+                <p>Cykelmiddag på fredag!<br>\
                 Du kommer vara på följande stopp:<br>\
-                <br> <strong>18:30 [stopp1]</strong> Tel: [tele1]<br>\
-                <strong>20:00 [stopp2]</strong> Tel: [tele2]<br>\
-                <strong>21:30 [stopp3]</strong> Tel: [tele3]<br>\
+                <br> <strong>18:30 Förrätt på adress: [stopp1]</strong> Tel: [tele1]<br>\
+                <strong>20:00 Varmrätt på adress: [stopp2]</strong> Tel: [tele2]<br>\
+                <strong>21:30 Efterrätt på adress: [stopp3]</strong> Tel: [tele3]<br>\
                 <br>\
                 Då ni serverar har ni följande matpreferenser: <br>\
                 [foodpreference] <br>\
                 och följande alkoholprefrerenser: <br>\
                 [alcoholpreference] <br> <br>\
-                Vi vill också nämna att ni som inte tryckt i sista stoppet kommer få det och kan\
-                därför också planera för att servera något som inte är efterrätt, så det inte råkar\
-                bli glass, godis och sockervadd till middag hehe.<br> <br>\
-                Slutligen hoppas vi att ni har superkul på rundan och vill informera om att rutten kan komma\
-                att ändras ifall folk blir sjuka eller så. <strong>SES IMORRN!!!</strong>\
+                Betalning sker till WAVE på 1234264180 och kalaset kostar 40kr per par<br>\
+                Märk betalningen med "Det står skrivet i stjärnorna."<br><br>\
+                Hoppas ni får en oförglum kväll! <br><br>\
+                Puss och kram / KlubbWerket\
                 </p>\
             </body>\
             </html>\
@@ -78,21 +77,19 @@ class Settings:
         self.mysk_mail ='<html>\
             <body>\
                 <meta charset="utf-8">\
-                <h1><font  color="#07fff0">Way</font> <span style="color:#808080";><br>\
-                &#160; &#160; &#160; Out</span> <br>\
-                <span style="color:#F1b434";>F</span><span style="color:#808080";>e</span><span style = "color:#000000">STS</span></span></h1>\
+                <h1><font  color="#00A4FF">WAVE</font> <span style="color:#808080";><br>\
                 <p>Grattis, du har fått plats till <span style="color:#07fff0";>W</span>ay out <span style="color:#F1b434";>F</span>eSTS!!<br>\
                 Det är sittning på bridgens och temat är <strong>FESTIVAL</strong>!\
                 För att behålla din plats och vara med på evenemanget behöver du bara\
                 swisha 110 kr till 123 158 89 46 (FUTF). <br>\
-                <strong>Betala senast fredag 11:e mars 23:59, betalningar efter det datumet tas inte emot och du förlorar din plats!</strong>\
+                <strong>Betala snarast!!</strong>\
                 </p>\
             </body>\
             </html>'
         # Ganska self-explanatory
         self.mail_subject = 'Cykelsittning'
-        self.password = 'jagvillhaflotte123'
-        self.sender_email = 'klubbmastarefutf@gmail.com'
+        self.password = 'futftuppen1'
+        self.sender_email = 'schemacykelsittning@gmail.com'
 
         # Namnet på textfilen som innehåller det färdiga schemat.
         self.textfilename = 'schema.txt'
