@@ -51,7 +51,7 @@ class CKL:
         self.num_hosts = len(self.participants_dict) // stops
         self.participants_list = list(self.participants_dict.keys())
         # Börja med tomt schema
-        self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': 0}
+        self.best_schedule = {'schedule': [], 'iteration' : 0, 'score': -999}
         # Områden med best byten
 
 
@@ -146,7 +146,7 @@ class CKL:
             random_nums = [ind for ind, name in enumerate(col) if name == '']
             hosts = [name for ind, name in enumerate(col) if name != ''] 
             random.shuffle(random_nums)
-            hosts_w_index = {host : random_nums[2*i:2*(i + 1)] for i, host in enumerate(hosts)}
+            hosts_w_index = {host : random_nums[(self.stops - 1)*i:(self.stops - 1)*(i + 1)] for i, host in enumerate(hosts)}
 
             for host, indices in hosts_w_index.items():
                 for index in indices:
@@ -247,8 +247,8 @@ class CKL:
         score = 0
         iteration_found = 1
         it = 0
-        best_score = 0
-        while it < number and best_score < 400:
+        best_score = -999
+        while it < number: #and best_score < 400:
             # Gör ett schema
             schedule = self.make_schedule(participants_dict)
             # Ge poäng
@@ -305,9 +305,9 @@ class CKL:
         # Get rest
         rest = []
         for group, participants in groups.items():
-            if len(participants) % 3 != 0:
+            if len(participants) % self.stops != 0:
                 random.shuffle(participants)
-                for _ in range(len(participants) % 3):
+                for _ in range(len(participants) % self.stops):
                     rest.append(groups[group].pop())
         return groups, rest
         
@@ -399,7 +399,7 @@ class CKL:
 if __name__ == '__main__':
 
     participants_dict = os.path.dirname(os.path.abspath(__file__)) + "/HKF.xlsx"
-    ckl = CKL(participants_dict, stops = 3)
+    ckl = CKL(participants_dict, stops = 7)
     #----------------Number of iterations-------------------
 
     num = int(input("Antal samples? "))
@@ -418,12 +418,12 @@ if __name__ == '__main__':
         best_result = ckl.sample(num)
 
         print(ckl.array_to_str(best_result['schedule']))
-        print(f"Betyg: {best_result['score']}")
+        #print(f"Betyg: {best_result['score']}")
         ok = input("Ser schema ok ut? (y/n) \n\t::: ")
     
     if ok.lower() == 'y':
-        result = ckl.send_route_mail(best_result)
-        #result = False
+        #result = ckl.send_route_mail(best_result)
+        result = False
         if result:
             print("Alla mail skickade.")
             ckl.save_as_txt(ckl.best_schedule['schedule'])
