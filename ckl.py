@@ -21,6 +21,7 @@ Att göra: Så att find_schedule också ta ett godtyckligt dictionary som input
 så att man ka ge make_groups-grupper till den.
 
 '''
+from re import S
 import time
 import random
 import os
@@ -82,7 +83,11 @@ class CKL:
         for _, row in data.iterrows():
             # Första kolonnen är tidsstämpel, man ska ha plats, adress och namn.
             # Number of data entries
-            assert len(row[1:]) == 10
+            try:
+                assert len(row[1:]) == self.settings.data_points
+            except:
+                print("Form doesn't match setting, the length is:", len(row[1:]))
+                quit()
             participants_dict[row[self.settings.name_index]] = self.settings.get_data(row)
             #print(row)
 
@@ -197,7 +202,7 @@ class CKL:
         # Detta är ifall sample inte redan körts.
         if not self.best_schedule['schedule']:
             print("Inget schema genererat!")
-            num_of_its = input("Vill du generera? Ange antar iterationer om ja annars 0.")
+            num_of_its = input("Vill du generera? Ange antal iterationer om ja annars 0.")
             return self.sample(num_of_its)
         else:
             return self.best_schedule
@@ -231,7 +236,7 @@ class CKL:
             sch += self.find_schedule(its, group_dict)['schedule']
         # Lägger på resten.
         sch += best_rest
-        return sch, self.evaluate(sch)
+        return {'schedule' : sch, 'score' : self.evaluate(sch)}
         
 
     def find_schedule(self, number: int, participants_dict = None) -> dict:
@@ -330,22 +335,19 @@ class CKL:
         '[tele3]' : lambda x: self.participants_dict[x[3]]['phone']}
         
         mails = {self.participants_dict[row[0]]['mail'] : '' for row in schedule}
-        #mails = {'martincsvardsjo@gmail.com' : '' for row in schedule}
 
         for row in schedule:
             current_mail = self.settings.mail_template
             for key, func in fill_ins.items():
                 current_mail = current_mail.replace(key, str(func(row)))
             mails[self.participants_dict[row[0]]['mail']] = current_mail
-            #mails['martincsvardsjo@gmail.com'] = current_mail
-            #break
-     
+        # This is the dangerous one...
         return self.send_mails(mails)
     
     def save_as_txt(self, schedule: list) -> None:
         '''Saves a text copy of the schedule
         '''
-        with open(os.path.dirname(os.path.abspath(__file__)) + self.settings.textfilename, 'a+') as f:
+        with open(self.settings.textfilename, 'w') as f:
             for row in schedule:
                 f.write(str(row) + str(self.give_row_points(row)) + '\n')
 
@@ -355,7 +357,7 @@ class CKL:
         '''        
         mails = {data['mail']: self.settings.confirmation_mail\
             for data in self.participants_dict.values()}
-        return self.send_mails(mails)
+        #return self.send_mails(mails)
             
     def send_mails(self, mails: dict, subject = None) -> bool:
         '''Implementerar MailSenderklassen för att skicka mailen
@@ -398,32 +400,58 @@ class CKL:
 
 if __name__ == '__main__':
 
-    participants_dict = os.path.dirname(os.path.abspath(__file__)) + "/HKF.xlsx"
-    ckl = CKL(participants_dict, stops = 7)
+    #-------------------- Filsökväg ------------------------
+
+    path = os.path.dirname(os.path.abspath(__file__)) + '/' + input('Filnamn: ')
+
+    #-------------- With or without groups -----------------
+
+    groups = (input("Områdesgruppering? (y/n)") == 'y')
+
+    #----------------Number of iterations-------------------
+
+    stops = int(input("Antal stopp: "))
+
     #----------------Number of iterations-------------------
 
     num = int(input("Antal samples? "))
     
     #-------------------------------------------------------
+
+    ckl = CKL(path, stops)
+    ok = ''
+    if groups:
+        best_result = ckl.schedule_w_groups()
+    else:
+        best_result = ckl.sample(num)
+        # Tvingar ut grupper i deras områden
+        #best_result, score = ckl.schedule_w_groups()
+        #print(time.time() - start)
+    while ok not in ['y', 'n']:
+        print(ckl.array_to_str(best_result['schedule']))
+        print(f"\nBetyg: {best_result['score']}")
+        ok = input("Vill du söka efter namn, skriv s. Annars bekräftar du schema med (y/n)\n\t::: ")
+        while ok == 's':
+            name = input('Vems rutt vill du se? ')
+            participating = [row[0] == name for row in best_result['schedule']]
+            if name == 'q':
+                ok = input("OK? (y/n)")
+            elif any(participating):
+                for index, boolean in enumerate(participating):
+                    if boolean:
+                        print(f"Rutt: {best_result['schedule'][index]}")
+            elif not any(participating):
+                print("Ingen med det namnet i schemat")
+                
+
     #print(len(ckl.participants_list))
     #print(ckl.participants_dict.values())
     #ckl.send_confirmation_mail()
     #ckl.make_groups()
     #start = time.time()
-    ok = ''
-    # Tvingar ut grupper i deras områden
-    #best_result, score = ckl.schedule_w_groups()
-    #print(time.time() - start)
-    while ok == '':
-        best_result = ckl.sample(num)
 
-        print(ckl.array_to_str(best_result['schedule']))
-        #print(f"Betyg: {best_result['score']}")
-        ok = input("Ser schema ok ut? (y/n) \n\t::: ")
-    
     if ok.lower() == 'y':
-        #result = ckl.send_route_mail(best_result)
-        result = False
+        result = ckl.send_route_mail(best_result)
         if result:
             print("Alla mail skickade.")
             ckl.save_as_txt(ckl.best_schedule['schedule'])

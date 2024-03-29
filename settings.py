@@ -14,16 +14,17 @@ class Settings:
         self.mail_index = 4
         self.adress_index = 5
         self.area_index = 6
-        self.last_stop_index = 7
+        self.last_stop_index = 7# 6
         self.food_index = 8
         self.alcohol_index = 9
         self.phone_column = 'Värdens telefonnummer'
+        self.data_points = 10
 
         #---------------------- Poäng för evaluering ---------------------
         self.last_stop_points = 5
-        areas = {'Flogsta' : [0, 10, 2, 1, 3, 2, 2],
-            'Kantorn - Väktargatan - Djäknegatan' : [10, 0, 10, 1, 1, 2, 1],
-            'Rosendal' : [2, 10, 0, 2, 10, 2, 2],
+        areas = {'Flogsta' : [0, 10, 2, 1, 10, 2, 2],
+            'Kantorn - Väktargatan - Djäknegatan' : [10, 0, 20, 1, 1, 2, 1],
+            'Rosendal' : [2, 20, 0, 2, 10, 2, 2],
             'Rackarberget - Studentvägen' : [1, 1, 2, 0, 2, 2, 0],
             'Sala Backe - Gränby' : [10, 1, 10, 2, 0, 1, 2],
             'Fålhagen - Industristaden' : [2, 2, 2, 2, 1, 0, 1],
@@ -40,21 +41,21 @@ class Settings:
             <html>\
             <body>\
                 <meta charset="utf-8">\
-                <h1><span style="color:#00A4FF";>Wave</span></h1>\
-                <p>Cykelmiddag på fredag!<br>\
-                Du kommer vara på följande stopp:<br>\
-                <br> <strong>18:30 Förrätt på adress: [stopp1]</strong> Tel: [tele1]<br>\
-                <strong>20:00 Varmrätt på adress: [stopp2]</strong> Tel: [tele2]<br>\
-                <strong>21:30 Efterrätt på adress: [stopp3]</strong> Tel: [tele3]<br>\
+                <h1><span style="color:#00D10D";>Cykelsittning!</span></h1>\
+                Kul att ni ska på cykelsittning!<br>\
+                Ni kommer ha följande schema: <br>\
+                <br> <strong>18:00 Förrätt på adress: [stopp1]</strong> Tel: [tele1]<br>\
+                Cykla till nästa stopp: 19:00<br>\
+                <strong>19:15 Varmrätt på adress: [stopp2]</strong> Tel: [tele2]<br>\
+                Cykla till nästa stopp: 20:45<br>\
+                <strong>21:00 Efterrätt på adress: [stopp3]</strong> Tel: [tele3]<br>\
                 <br>\
-                Då ni serverar har ni följande matpreferenser: <br>\
-                [foodpreference] <br>\
-                och följande alkoholprefrerenser: <br>\
-                [alcoholpreference] <br> <br>\
-                Betalning sker till WAVE på 1234264180 och kalaset kostar 40kr per par<br>\
-                Märk betalningen med "Det står skrivet i stjärnorna."<br><br>\
-                Hoppas ni får en oförglum kväll! <br><br>\
-                Puss och kram / KlubbWerket\
+                Efter rundan köar vi tillsammans till släpp från kl 22:00<br><br>\
+                <strong>Då ni serverar har ni följande matpreferenser att ta hänsyn till (en av dem är den som ni själva angivit): </strong><br><br>\
+                Matpreferenser: [foodpreference] <br>\
+                Alkoholpreferenser: [alcoholpreference] <br><br>\
+                Kom ihåg att om man inte serverar huvudrätt så får man gärna bjuda på drink åt de som kommer. <br><br>\
+                Ses då och ha så kul! :)\
                 </p>\
             </body>\
             </html>\
@@ -88,8 +89,8 @@ class Settings:
             </html>'
         # Ganska self-explanatory
         self.mail_subject = 'Cykelsittning'
-        self.password = 'futftuppen1'
-        self.sender_email = 'schemacykelsittning@gmail.com'
+        self.password = 'your_password_here'
+        self.sender_email = 'your@email.here'
 
         # Namnet på textfilen som innehåller det färdiga schemat.
         self.textfilename = 'schema.txt'
